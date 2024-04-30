@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, Client, GatewayIntentBits } = require('discord.js');
+const { SlashCommandBuilder, Client, Intents, GatewayIntentBits } = require('discord.js');
 const axios = require('axios');
 
 // Initialize your Discord bot
@@ -55,11 +55,13 @@ axios.post(url, requestData, { headers })
     const responseText = response.data.choices[0].message.content.trim();
   
       // Split response into chunks if it exceeds 2000 characters
-      const responseChunks = chunkResponse(responseText);
-  
-      // Send each chunk as a separate message
-      for (const chunk of responseChunks) {
-        await interaction.reply(chunk);
+      if (responseText.length <= 2000) {
+        interaction.reply(responseText);
+      } else {
+        const chunks = splitMessage(responseText, { maxLength: 2000 });
+        for (const chunk of chunks) {
+          await interaction.reply(chunk);
+        }
       }
   });
     } catch (error) {
