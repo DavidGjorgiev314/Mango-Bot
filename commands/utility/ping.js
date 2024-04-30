@@ -1,0 +1,11 @@
+const { SlashCommandBuilder, Client, GatewayIntentBits } = require('discord.js');
+const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+
+module.exports = {
+	data: new SlashCommandBuilder()
+		.setName('ping')
+		.setDescription('Check Mango\'s ping!'),
+	async execute(interaction) {
+		await interaction.reply(`Pong! ${interaction.client.ws.ping}ms`);
+	},
+};
