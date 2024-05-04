@@ -6,6 +6,6 @@ module.exports = {
 		.setName('ping')
 		.setDescription('Check Mango\'s ping!'),
 	async execute(interaction) {
-		await interaction.reply(`Pong! ${interaction.client.ws.ping}ms`);
+		await interaction.reply(`:ping_pong: Pong! ${interaction.client.ws.ping}ms`);
 	},
 };
