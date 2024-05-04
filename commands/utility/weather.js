@@ -17,16 +17,17 @@ module.exports = {
     try {
       const response = await axios.get(`http://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(location)}&appid=757fe46a28c9b169e2b8fdd5e2564e45&units=metric`);
       const weatherData = response.data;
+      let flag = (weatherData.sys.country).toLowerCase();
       const weatherEmbed = new EmbedBuilder()
-                .setTitle(`Weather forecast for ${weatherData.name}`)
-                .setDescription(`Current weather: ${weatherData.weather[0].description}`)
+                .setTitle(`:flag_${flag}: Weather forecast for:\n ${weatherData.name}, ${weatherData.sys.country}`)
+                .setDescription(`Current weather: **${weatherData.weather[0].description}**`)
       			.addFields(
 					{ name: `Temperature`, value: `:thermometer: ${weatherData.main.temp}°C`, inline: true },
 					{ name: 'Feels Like', value: `:nerd: ${weatherData.main.feels_like}°C`, inline: true },
-                    { name: "\t", value: "\t" },
+                    { name: '\t', value: ` `},
                     { name: 'Sunrise', value: `:sunrise: <t:${weatherData.sys.sunrise}:t>`, inline: true },
                     { name: 'Sunset', value: `:sunset: <t:${weatherData.sys.sunset}:t>`, inline: true },
-                    { name: "\t", value: "\t" },
+                    { name: '\t', value: ` `},
                     { name: 'Humidity', value: `:sweat_drops: ${weatherData.main.humidity}%`, inline: true },
                     { name: 'Wind Speed', value: `:dash: ${Math.round((weatherData.wind.speed*3.6)*100)/100}km/h`, inline: true },
                 )
