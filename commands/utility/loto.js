@@ -16,6 +16,7 @@ module.exports = {
             i--;
           }
         }
+        picked_numbers.sort(function(a,b){return a-b});
         let response = picked_numbers.toString().replace(/,/g, ', ');
 		await interaction.reply(`Here are your 7 winning loto numbers!\n :four_leaf_clover: ${response} :four_leaf_clover:`);
 	},
