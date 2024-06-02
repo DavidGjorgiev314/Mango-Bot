@@ -10,7 +10,7 @@ const client = new Client({
   ],
 });
 
-const OPENAI_API_KEY = 'sk-proj-xKiZNuZHt8H2PmVsSYByT3BlbkFJIy3FSYrz2LBw6dC5W5Em';
+const OPENAI_API_KEY = 'sk-proj-UBoKmvFJveeFAfwshXhGT3BlbkFJUwpRCxvPgzMvHrEGSQZh';
 const url = 'https://api.openai.com/v1/chat/completions';
 
 function chunkResponse(responseText) {
@@ -65,7 +65,7 @@ module.exports = {
         }
       } catch (error) {
         console.error('Error:', error);
-        await interaction.reply('An error occurred while processing your request.');
+        await interaction.reply('Mango has run out of ChatGPT requests. Pay to get more :PepeBusiness:');
       }
     },
 };
