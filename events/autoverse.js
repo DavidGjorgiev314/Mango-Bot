@@ -31,7 +31,7 @@ async function sendVerseOfTheDayToChannel(channel) {
     // Collect verse numbers and texts
     verses.forEach(verse => {
       verseNumbers.push(`${verse.chapter}:${verse.verse}`);
-      verseTexts.push(verse.text.replace(/^By David\. /, ''));
+      verseTexts.push(verse.text.trim());
     });
 
     // Determine the verse range string
@@ -51,10 +51,10 @@ async function sendVerseOfTheDayToChannel(channel) {
     }
 
     // Join verse texts into a single string
-    const verseText = verseTexts.join(' ');
+    const verseText = verseTexts.join(' ').trim();
 
     // Construct the final message
-    const message = `${verses[0].bookname} ${verseNumbersString}\n"${verseText}"`;
+    const message = `:cross: **Bible Verse of the Day** :cross:\n\n:book: ${verses[0].bookname} ${verseNumbersString}\n"${verseText}"`;
 
     // Send the message to the channel
     await channel.send({ content: message });
