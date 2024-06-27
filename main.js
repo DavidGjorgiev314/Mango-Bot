@@ -1,9 +1,19 @@
 const fs = require('node:fs');
 const path = require('node:path');
-const { Client, Collection, Events, GatewayIntentBits } = require('discord.js');
+const { Client, Collection, Events, GatewayIntentBits, ActivityType, ActivityOptions } = require('discord.js');
 const { token } = require('./config.json');
 
-const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+const activityOptions = {
+	name: 'your every move 👀',
+	type: ActivityType.Watching,
+};
+
+const client = new Client({
+	intents: [GatewayIntentBits.Guilds],
+	presence: {
+		activities: [activityOptions],
+	},
+});
 
 client.commands = new Collection();
 
