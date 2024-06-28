@@ -23,6 +23,7 @@ function chunkResponse(responseText) {
 }
 
 module.exports = {
+  category: 'utility',
 	data: new SlashCommandBuilder()
     .setName("ask")
     .setDescription("Ask Mango anything!")
@@ -36,33 +37,34 @@ module.exports = {
       const { options } = interaction;
       const prompt = options.getString('prompt');
       try {
-        const requestData = {
-          model: 'gpt-3.5-turbo',
-          messages: [{ role: 'user', content: `${prompt}` }],
-          temperature: 0.7
-        };
+        await interaction.reply('Mango has run out of ChatGPT requests. Pay to get more :PepeBusiness:');
+        // const requestData = {
+        //   model: 'gpt-3.5-turbo',
+        //   messages: [{ role: 'user', content: `${prompt}` }],
+        //   temperature: 0.7
+        // };
     
-        const headers = {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${OPENAI_API_KEY}`
-        };
+        // const headers = {
+        //   'Content-Type': 'application/json',
+        //   'Authorization': `Bearer ${OPENAI_API_KEY}`
+        // };
     
-        // Acknowledge the interaction immediately
-        await interaction.deferReply();
+        // // Acknowledge the interaction immediately
+        // await interaction.deferReply();
     
-        // Make the API request
-        const response = await axios.post(url, requestData, { headers });
-        const responseText = response.data.choices[0].message.content.trim();
+        // // Make the API request
+        // const response = await axios.post(url, requestData, { headers });
+        // const responseText = response.data.choices[0].message.content.trim();
     
-        // Split response into chunks if it exceeds 2000 characters
-        if (responseText.length <= 2000) {
-          await interaction.editReply(responseText);
-        } else {
-          const chunks = chunkResponse(responseText);
-          for (const chunk of chunks) {
-            await interaction.followUp(chunk);
-          }
-        }
+        // // Split response into chunks if it exceeds 2000 characters
+        // if (responseText.length <= 2000) {
+        //   await interaction.editReply(responseText);
+        // } else {
+        //   const chunks = chunkResponse(responseText);
+        //   for (const chunk of chunks) {
+        //     await interaction.followUp(chunk);
+        //   }
+        // }
       } catch (error) {
         console.error('Error:', error);
         await interaction.reply('Mango has run out of ChatGPT requests. Pay to get more :PepeBusiness:');

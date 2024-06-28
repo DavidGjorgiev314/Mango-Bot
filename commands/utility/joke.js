@@ -2,6 +2,7 @@ const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const axios = require("axios");
 
 module.exports = {
+    category: 'utility',
 	data: new SlashCommandBuilder()
     .setName("joke")
     .setDescription("Ask Mango for a joke")
