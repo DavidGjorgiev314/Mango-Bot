@@ -1,15 +1,32 @@
 const axios = require('axios');
+const cheerio = require('cheerio');
 const { Client, GatewayIntentBits } = require('discord.js');
 
 const client = new Client({
   intents: [GatewayIntentBits.Guilds],
 });
 
-// Function to get the Verse of the Day (VOTD)
+// Function to get the Verse of the Day (VOTD) from bible.com
 async function getVerseOfTheDay() {
   try {
-    const response = await axios.get('https://labs.bible.org/api/?passage=votd&type=json');
-    return response.data; // Returns an array of verse objects
+    const url = 'https://www.bible.com/verse-of-the-day';
+    const response = await axios.get(url);
+    const html = response.data;
+    const $ = cheerio.load(html);
+
+    // Selectors based on the HTML structure provided
+    const verseText = $('div.mbs-3.border.border-l-large.rounded-1.border-black.dark\\:border-white.pli-1.plb-1.pis-2 > a.w-full.no-underline.dark\\:text-text-dark.text-text-light').first().text().trim();
+    const verseReference = $('div.mbs-3.border.border-l-large.rounded-1.border-black.dark\\:border-white.pli-1.plb-1.pis-2 > a.w-full.no-underline > p').first().text().trim();
+
+    // Remove the version part from the reference using a regular expression
+    const cleanedReference = verseReference.replace(/\s*\(.*?\)$/, '');
+
+    if (verseText && cleanedReference) {
+      return [{ reference: cleanedReference, content: verseText }];
+    } else {
+      console.error('Unable to find the verse content or reference.');
+      return [];
+    }
   } catch (error) {
     console.error('Error fetching Verse of the Day:', error.message);
     return [];
@@ -25,36 +42,12 @@ async function sendVerseOfTheDayToChannel(channel) {
       return;
     }
 
-    let verseNumbers = [];
-    let verseTexts = [];
-
-    // Collect verse numbers and texts
-    verses.forEach(verse => {
-      verseNumbers.push(`${verse.chapter}:${verse.verse}`);
-      verseTexts.push(verse.text.trim());
-    });
-
-    // Determine the verse range string
-    let verseNumbersString;
-    if (verseNumbers.length === 1) {
-      verseNumbersString = verseNumbers[0];
-    } else {
-      const firstVerse = verseNumbers[0];
-      const lastVerse = verseNumbers[verseNumbers.length - 1];
-      const firstChapter = firstVerse.split(':')[0];
-      const lastChapter = lastVerse.split(':')[0];
-      if (firstChapter === lastChapter) {
-        verseNumbersString = `${firstChapter}:${firstVerse.split(':')[1]}-${lastVerse.split(':')[1]}`;
-      } else {
-        verseNumbersString = `${firstVerse}-${lastVerse}`;
-      }
-    }
-
-    // Join verse texts into a single string
-    const verseText = verseTexts.join(' ').trim();
+    const verse = verses[0];
+    const verseReference = `${verse.reference}`;
+    const verseText = verse.content.trim();
 
     // Construct the final message
-    const message = `:cross: **Bible Verse of the Day** :cross:\n\n:book: ${verses[0].bookname} ${verseNumbersString}\n"${verseText}"`;
+    const message = `:cross: **Bible Verse of the Day** :cross:\n\n:book: ${verseReference}\n"${verseText}"`;
 
     // Send the message to the channel
     await channel.send({ content: message });
@@ -67,3 +60,8 @@ async function sendVerseOfTheDayToChannel(channel) {
 module.exports = {
   sendVerseOfTheDayToChannel,
 };
+
+// For testing purposes, let's fetch the verse of the day
+getVerseOfTheDay().then(verses => {
+  console.log('Fetched Verses:', verses);
+});
