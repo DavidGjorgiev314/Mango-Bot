@@ -51,7 +51,7 @@ async function sendVerseOfTheDayToChannel(channel) {
 
     // Send the message to the channel
     await channel.send({ content: message });
-    console.log('Verse of the Day sent:', message);
+    // console.log('Verse of the Day sent:', message);
   } catch (error) {
     console.error('Error sending Verse of the Day:', error.message);
   }
@@ -62,6 +62,6 @@ module.exports = {
 };
 
 // For testing purposes, let's fetch the verse of the day
-getVerseOfTheDay().then(verses => {
-  console.log('Fetched Verses:', verses);
-});
+// getVerseOfTheDay().then(verses => {
+//   console.log('Fetched Verses:', verses);
+// });
