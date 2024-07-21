@@ -45,11 +45,22 @@ async function sendVerseOfTheDayToChannel(channel) {
     const verse = verses[0];
     const verseReference = `${verse.reference}`;
     const verseText = verse.content.trim();
+    // Split the verse text into lines
+    const verseLines = verseText.split('\n');
+
+    // Format each line as a block quote and add quotation marks at the beginning and end
+    const formattedVerse = verseLines.map((line, index) => {
+      if (index === 0) {
+        return `> "${line}`;
+      } else if (index === verseLines.length - 1) {
+        return `> ${line}"`;
+      } else {
+        return `> ${line}`;
+      }
+    }).join('\n');
 
     // Construct the final message
-    const message = `:cross: **Bible Verse of the Day** :cross:\n\n:book: ${verseReference}\n"${verseText}"`;
-
-    // Send the message to the channel
+    const message = `:cross: **Bible Verse of the Day** :cross:\n\n:book: \`${verseReference}\`\n${formattedVerse}\n-# ✞ Read your Bible! Verse fetched from [Bible.com](<https://www.bible.com/verse-of-the-day>)`;
     await channel.send({ content: message });
     // console.log('Verse of the Day sent:', message);
   } catch (error) {
