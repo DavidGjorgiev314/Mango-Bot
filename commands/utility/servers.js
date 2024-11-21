@@ -7,10 +7,25 @@ module.exports = {
 		.setName('servers')
 		.setDescription('Lists all servers the bot is in.'),
 	async execute(interaction) {
+        const userId = interaction.user.id;
+		const authorizedUserId = '312920065093664780';
+
+		if (userId !== authorizedUserId) {
+			return interaction.reply('You do not have permission to execute this command.');
+		}
 		const guilds = interaction.client.guilds.cache;
-		const serverList = guilds.map((guild, index) => `${index + 1}. ${guild.name}`).join('\n');
+		let serverList = '';
+		let index = 1;
+
+		guilds.forEach(guild => {
+			serverList += `${index}) ${guild.name} (${guild.id})\n`;
+			index++;
+		});
+
 		const totalCount = guilds.size;
+
 		await interaction.reply(
-			`I am in a total of **${totalCount}** server(s):\n\n${serverList}`;
+			`I am in a total of **${totalCount}** server(s):\n\n${serverList}`
+		);
 	},
 };
