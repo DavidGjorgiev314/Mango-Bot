@@ -8,19 +8,11 @@ module.exports = {
 	execute(client) {
 		console.log(`Ready! Logged in as ${client.user.tag}`);
 
-		// Set bot activity
-		// client.user.setActivity({
-		// 	name: 'your every move 👀',
-		// 	type: ActivityType.WATCHING,
-		// });
-
-		// Schedule sending a verse every 24 hours
 		cron.schedule('0 12 * * *', async () => {
 			try {
-				const channelId = '602663660288213013'; // Replace with your channel ID
+				const channelId = '602663660288213013';
 				const channel = await client.channels.fetch(channelId);
 
-				// Check if the channel is a TextChannel
 				if (channel instanceof TextChannel) {
 					await sendVerseOfTheDayToChannel(channel);
 					console.log('Scheduled Bible verse sent.');
