@@ -1,57 +1,80 @@
+const fs = require('fs');
+const path = require('path');
 const axios = require('axios');
-const { Client, GatewayIntentBits } = require('discord.js');
+const cheerio = require('cheerio');
+const { EmbedBuilder } = require('discord.js');
 
-const client = new Client({
-  intents: [GatewayIntentBits.Guilds],
-});
+const counterFile = path.join(__dirname, '../verse-counter.json');
 
-// Function to get the Verse of the Day (VOTD) from bible.com
-async function getVerseOfTheDay() {
+function loadCounter() {
   try {
-    const url = 'https://www.bible.com/verse-of-the-day';
-    const response = await axios.get(url);
-
-    // Extract the JSON containing the verses from the response
-    const match = response.data.match(/"verses":(\[\{.*?\}\])/);
-    if (!match) {
-      console.error('Unable to find verse data in the page.');
-      return [];
-    }
-
-    // Parse the verses part and get the first verse's reference and content
-    const verseData = JSON.parse(match[1]);
-    const verse = verseData[0];
-
-    // Extract the verse reference and content
-    const verseReference = verse.reference.human;
-    const verseText = verse.content;
-
-    return [{ reference: verseReference, content: verseText }];
-  } catch (error) {
-    console.error('Error fetching Verse of the Day:', error.message);
-    return [];
+    const data = fs.readFileSync(counterFile, 'utf8');
+    const json = JSON.parse(data);
+    return json.verseCount || 0;
+  } catch (err) {
+    console.error('Failed to read counter file. Defaulting to 0.');
+    return 0;
   }
 }
 
-// Function to send the Verse of the Day to a specified channel
+function saveCounter(count) {
+  try {
+    fs.writeFileSync(counterFile, JSON.stringify({ verseCount: count }, null, 2));
+  } catch (err) {
+    console.error('Failed to write counter file:', err);
+  }
+}
+
+async function getVerseOfTheDay(counter) {
+  try {
+    const url = 'https://www.bible.com/verse-of-the-day';
+    const response = await axios.get(url);
+    const $ = cheerio.load(response.data);
+
+    const verseText = $('div[class*="border"] a').first().text().trim();
+    const verseReference = $('div[class*="border"] p').first().text().trim();
+
+    let imageUrl = $('img[src*="imageproxy.youversionapi.com"]').attr('src');
+    if (imageUrl && imageUrl.startsWith('/')) {
+      imageUrl = `https://www.bible.com${imageUrl}`;
+    }
+
+    const embed = new EmbedBuilder()
+      .setTitle(`:cross: Bible Verse of the Day (#${counter}) :cross:`)
+      .setDescription(`📖 **${verseReference}**\n${verseText}`)
+      .setColor('#00FFFF')
+      .setFooter({
+        text: 'Read your Bible! Verse fetched from Bible.com',
+        iconURL: 'https://www.bible.com/favicon.ico',
+      });
+
+    if (imageUrl) {
+      embed.setImage(imageUrl);
+    }
+
+    return embed;
+  } catch (error) {
+    console.error('Error fetching or parsing the verse:', error.message);
+    return null;
+  }
+}
+
 async function sendVerseOfTheDayToChannel(channel) {
   try {
-    const verses = await getVerseOfTheDay();
-    if (verses.length === 0) {
-      console.error('No verses found in the Verse of the Day response.');
+    let count = loadCounter();
+    count++; // increment the counter
+    const embed = await getVerseOfTheDay(count);
+
+    if (!embed) {
+      console.error('Failed to fetch or build the verse embed.');
       return;
     }
 
-    const verse = verses[0];
-    const verseReference = verse.reference;
-    const verseText = verse.content.trim();
-
-    // Construct the final message
-    const message = `:cross: **Bible Verse of the Day** :cross:\n\n:book: \`${verseReference}\`\n"${verseText}"\n-# ✞ Read your Bible! Verse fetched from [Bible.com](<https://www.bible.com/verse-of-the-day>)`;
-    await channel.send({ content: message });
-    console.log('Verse of the Day sent:', message);
+    await channel.send({ embeds: [embed] });
+    saveCounter(count);
+    console.log(`Verse of the Day embed #${count} sent successfully.`);
   } catch (error) {
-    console.error('Error sending Verse of the Day:', error.message);
+    console.error('Error sending embed:', error.message);
   }
 }
 
