@@ -1,29 +1,6 @@
-const fs = require('fs');
-const path = require('path');
 const axios = require('axios');
 const cheerio = require('cheerio');
 const { EmbedBuilder } = require('discord.js');
-
-const counterFile = path.join(__dirname, '../verse-counter.json');
-
-function loadCounter() {
-  try {
-    const data = fs.readFileSync(counterFile, 'utf8');
-    const json = JSON.parse(data);
-    return json.verseCount || 0;
-  } catch (err) {
-    console.error('Failed to read counter file. Defaulting to 0.');
-    return 0;
-  }
-}
-
-function saveCounter(count) {
-  try {
-    fs.writeFileSync(counterFile, JSON.stringify({ verseCount: count }, null, 2));
-  } catch (err) {
-    console.error('Failed to write counter file:', err);
-  }
-}
 
 async function getVerseOfTheDay(counter) {
   try {
@@ -59,11 +36,9 @@ async function getVerseOfTheDay(counter) {
   }
 }
 
-async function sendVerseOfTheDayToChannel(channel) {
+async function sendVerseOfTheDayToChannel(channel, counter) {
   try {
-    let count = loadCounter();
-    count++; // increment the counter
-    const embed = await getVerseOfTheDay(count);
+    const embed = await getVerseOfTheDay(counter);
 
     if (!embed) {
       console.error('Failed to fetch or build the verse embed.');
@@ -71,8 +46,7 @@ async function sendVerseOfTheDayToChannel(channel) {
     }
 
     await channel.send({ embeds: [embed] });
-    saveCounter(count);
-    console.log(`Verse of the Day embed #${count} sent successfully.`);
+    console.log(`Verse of the Day embed #${counter} sent successfully.`);
   } catch (error) {
     console.error('Error sending embed:', error.message);
   }
