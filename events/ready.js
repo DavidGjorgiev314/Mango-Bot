@@ -1,9 +1,8 @@
 const fs = require('fs');
 const path = require('path');
-const { Events, ActivityType, TextChannel } = require('discord.js');
+const { Events, TextChannel } = require('discord.js');
 const cron = require('node-cron');
 const { sendVerseOfTheDayToChannel } = require('./autoverse');
-const { channelIds } = require('../votd-channels.json');
 
 const counterFile = path.join(__dirname, '../verse-counter.json');
 
@@ -32,25 +31,35 @@ module.exports = {
   execute(client) {
     console.log(`Ready! Logged in as ${client.user.tag}`);
 
-    cron.schedule('34 12 * * *', async () => {
-      let count = loadCounter();
-      count++;
-      saveCounter(count);
+   cron.schedule('0 13 * * *', async () => {
+    let count = loadCounter();
+    count++;
+    saveCounter(count);
 
-      for (const channelId of channelIds) {
-        try {
-          const channel = await client.channels.fetch(channelId);
+    let dynamicChannelIds = [];
+    try {
+      const rawData = fs.readFileSync(path.join(__dirname, '../votd-channels.json'), 'utf8');
+      const parsed = JSON.parse(rawData);
+      dynamicChannelIds = parsed.channelIds || [];
+    } catch (err) {
+      console.error('Failed to read votd-channels.json:', err);
+      return;
+    }
 
-          if (channel instanceof TextChannel) {
-            await sendVerseOfTheDayToChannel(channel, count);
-            console.log(`Scheduled Bible verse sent to ${channelId}.`);
-          } else {
-            console.error(`Channel ${channelId} is invalid or not a text channel.`);
-          }
-        } catch (error) {
-          console.error(`Error sending verse to ${channelId}:`, error);
+    for (const channelId of dynamicChannelIds) {
+      try {
+        const channel = await client.channels.fetch(channelId);
+
+        if (channel instanceof TextChannel) {
+          await sendVerseOfTheDayToChannel(channel, count);
+          console.log(`Scheduled Bible verse sent to ${channelId}.`);
+        } else {
+          console.error(`Channel ${channelId} is invalid or not a text channel.`);
         }
+      } catch (error) {
+        console.error(`Error sending verse to ${channelId}:`, error);
       }
-    });
+    }
+  });
   },
 };
