@@ -16,7 +16,7 @@ module.exports = {
 		if (interaction.guildId === OWNER_GUILD_ID && interaction.user.id !== OWNER_ID) {
 			return await interaction.reply({
 				content: `:no_entry: You cannot unsubscribe from this feature in **David's** server`,
-				ephemeral: true
+				flags: 64
 			});
 		}
 

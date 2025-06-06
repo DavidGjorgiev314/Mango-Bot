@@ -12,7 +12,7 @@ module.exports = {
 		.setDescription('List all channels subscribed to VOTD (owner only).'),
 	async execute(interaction) {
 		if (interaction.user.id !== OWNER_ID) {
-			return await interaction.reply({ content: '❌ You are not authorized to use this command.', ephemeral: true });
+			return await interaction.reply({ content: '❌ You are not authorized to use this command.', flags: 64 });
 		}
 
 		let channelData;
