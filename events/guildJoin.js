@@ -1,9 +1,11 @@
 const config = require("../config.json");
+const { deployGuildCommands } = require("../deployCommands.js");
 
 module.exports = {
     name: 'guildCreate',
     once: false,
     async execute(guild) {
+        await deployGuildCommands(guild.id);
         const welcomeMessage = `### Hi there! I'm Mango :smirk_cat:\nThank you for inviting me to your server!\n\n:cat2: I am **David's** irl pet and I decided to join Discord because I'm bored. Here's all the stuff I can do!\n\n:cross: Daily Bible Verse of the Day\n- If you /subscribe, I will send you a bible verse every day so that you're always in touch with the Word of God! You can also /unsubscribe if you change your mind :smile_cat:\n\n:white_sun_small_cloud: Weather Forecast\n- By typing /weather [location], I will send you a forecast of your entered location.\n\n:frame_photo: High-Quality Image Search\n- If you are looking for some beautiful HD photos just type /image [keyword] and I will send them to you.\n\n:performing_arts: Joke\n- Want to hear a joke? Type /joke [category] and see if you find me funny :joy_cat:\n\n:four_leaf_clover: Lottery Numbers Generator\n- Planning on buying a lottery ticket but don't know which numbers to pick? No worries, just type /loto and I'll tell you the winning numbers :smirk_cat:`; 
         
         if (guild.systemChannel && guild.systemChannel.permissionsFor(guild.members.me).has('SEND_MESSAGES')) {

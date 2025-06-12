@@ -53,25 +53,6 @@ for (const file of eventFiles) {
     }
 }
 
-client.once('ready', () => {
-    exec('node deploy-guild-commands.js', (error, stdout, stderr) => {
-        if (error) {
-            console.error(`Error deploying commands: ${error.message}`);
-            return;
-        }
-        if (stderr) {
-            console.error(`Error: ${stderr}`);
-            return;
-        }
-        console.log(`Deploy output: ${stdout}`);
-    });
-});
-
-// Global error handling
-process.on('unhandledRejection', (reason) => {
-    console.warn('Unhandled Rejection:', reason);
-});
-
 process.on('uncaughtException', (error) => {
     console.error('Uncaught Exception:', error);
 });

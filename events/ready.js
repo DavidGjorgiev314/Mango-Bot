@@ -3,6 +3,7 @@ const path = require('path');
 const { Events, TextChannel } = require('discord.js');
 const cron = require('node-cron');
 const { sendVerseOfTheDayToChannel } = require('./autoverse');
+const { deployCommandsToGuilds } = require('../deploy-guild-commands');
 
 const counterFile = path.join(__dirname, '../verse-counter.json');
 
@@ -28,7 +29,11 @@ function saveCounter(count) {
 module.exports = {
   name: Events.ClientReady,
   once: true,
-  execute(client) {
+  async execute(client) {
+    const guildIds = client.guilds.cache.map(guild => guild.id);
+    console.log('📦 Auto-deploying all guild (/) commands:');
+    await deployCommandsToGuilds(guildIds);
+    
     console.log(`Ready! Logged in as ${client.user.tag}`);
 
    cron.schedule('0 13 * * *', async () => {
