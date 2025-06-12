@@ -3,7 +3,7 @@ const { clientId, token } = require('./config.json');
 const fs = require('node:fs');
 const path = require('node:path');
 
-async function deployCommandsToGuilds(guildIds) {
+async function deployCommandsToGuilds(guildIds, client = null) {
 	const commands = [];
 	const foldersPath = path.join(__dirname, 'commands');
 	const commandFolders = fs.readdirSync(foldersPath);
@@ -30,15 +30,35 @@ async function deployCommandsToGuilds(guildIds) {
 
 	for (const guildId of guildIds) {
 		try {
+			let guildName = guildId;
+
+			if (client) {
+				let guild = client.guilds.cache.get(guildId);
+				if (!guild) {
+					guild = await client.guilds.fetch(guildId);
+				}
+				if (guild) guildName = guild.name;
+			}
+
 			const data = await rest.put(
 				Routes.applicationGuildCommands(clientId, guildId),
 				{ body: commands },
 			);
-			const msg = `✅ Reloaded ${data.length} commands for guild ${guildId}`;
+
+			const msg = `✅ Reloaded ${data.length} commands for: ${guildName}`;
 			console.log(msg);
 			output.push(msg);
 		} catch (error) {
-			const errMsg = `❌ Failed to deploy for guild ${guildId}: ${error}`;
+            let guildName = guildId;
+
+			if (client) {
+				let guild = client.guilds.cache.get(guildId);
+				if (!guild) {
+					guild = await client.guilds.fetch(guildId);
+				}
+				if (guild) guildName = guild.name;
+			}
+			const errMsg = `❌ Failed to deploy for: ${guildName}: ${error}`;
 			console.error(errMsg);
 			output.push(errMsg);
 		}

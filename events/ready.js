@@ -32,7 +32,7 @@ module.exports = {
   async execute(client) {
     const guildIds = client.guilds.cache.map(guild => guild.id);
     console.log('📦 Auto-deploying all guild (/) commands:');
-    await deployCommandsToGuilds(guildIds);
+    await deployCommandsToGuilds(guildIds, client);
     
     console.log(`Ready! Logged in as ${client.user.tag}`);
 

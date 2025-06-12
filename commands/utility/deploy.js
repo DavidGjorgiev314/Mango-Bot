@@ -11,13 +11,13 @@ module.exports = {
 		const authorizedUserId = '312920065093664780';
 
 		if (userId !== authorizedUserId) {
-			return interaction.reply({ content: '❌ You are not authorized to deploy commands.', ephemeral: true });
+			return interaction.reply({ content: '❌ You are not authorized to deploy commands.', flags: 64 });
 		}
 
 		await interaction.reply('🚀 Deploying commands...');
 
 		const guildIds = interaction.client.guilds.cache.map(guild => guild.id);
-		const resultLines = await deployCommandsToGuilds(guildIds);
+		const resultLines = await deployCommandsToGuilds(guildIds, interaction.client);
 
 		await interaction.followUp('📦 Deployment Result:\n```' + resultLines.join('\n').slice(-1900) + '```');
 	}
