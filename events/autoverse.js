@@ -1,6 +1,6 @@
 const axios = require('axios');
 const cheerio = require('cheerio');
-const { EmbedBuilder } = require('discord.js');
+const { EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder } = require('discord.js');
 
 async function getVerseOfTheDay(counter) {
   try {
@@ -45,8 +45,16 @@ async function sendVerseOfTheDayToChannel(channel, counter) {
       return;
     }
 
-    await channel.send({ embeds: [embed] });
-    console.log(`Verse of the Day embed #${counter} sent successfully.`);
+    const button = new ButtonBuilder()
+      .setCustomId('daily_embed_xp')
+      .setLabel('📖 Read')
+      .setStyle(ButtonStyle.Success);
+
+    const row = new ActionRowBuilder().addComponents(button);
+
+    const sentMessage = await channel.send({ embeds: [embed], components: [row] });
+
+    console.log(`Verse of the Day embed #${counter} sent.`);
   } catch (error) {
     console.error('Error sending embed:', error.message);
   }
