@@ -11,7 +11,6 @@ if (fs.existsSync(levelsFilePath)) {
 module.exports = {
     name: Events.InteractionCreate,
     async execute(interaction) {
-
         if (interaction.isButton()) {
             const userId = interaction.user.id;
 
@@ -28,6 +27,19 @@ module.exports = {
 
             if (interaction.customId === 'daily_embed_xp') {
                 const messageId = interaction.message.id;
+                const embedDate = new Date(interaction.message.createdTimestamp);
+                const today = new Date();
+                const isSameDay =
+                    embedDate.getFullYear() === today.getFullYear() &&
+                    embedDate.getMonth() === today.getMonth() &&
+                    embedDate.getDate() === today.getDate();
+
+                if (!isSameDay) {
+                    return await interaction.reply({
+                        content: '⛔ This verse is from a previous day. You can only claim XP from today\'s verse.',
+                        flags: 64
+                    });
+                }
 
                 if (userData.claimed.includes(messageId)) {
                     return await interaction.reply({
@@ -36,7 +48,7 @@ module.exports = {
                     });
                 }
 
-                const xpGain = Math.floor(Math.random() * 10) + 15;
+                const xpGain = 50;
                 userData.xp += xpGain;
                 userData.claimed.push(messageId);
 
