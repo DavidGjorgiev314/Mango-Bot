@@ -2,7 +2,7 @@ const { SlashCommandBuilder } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
 
-const levelsFilePath = path.join(__dirname, '../../levels.json');
+const levelsFilePath = path.join(__dirname, '../../data/levels.json');
 
 module.exports = {
 	category: 'utility',

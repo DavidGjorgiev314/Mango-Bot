@@ -2,7 +2,7 @@ const { SlashCommandBuilder } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
 
-const channelsFilePath = path.join(__dirname, '../../votd-channels.json');
+const channelsFilePath = path.join(__dirname, '../../data/votd-channels.json');
 const OWNER_ID = '312920065093664780';
 
 module.exports = {

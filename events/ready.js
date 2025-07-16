@@ -5,7 +5,7 @@ const cron = require('node-cron');
 const { sendVerseOfTheDayToChannel } = require('./autoverse');
 const { deployCommandsToGuilds } = require('../deploy-guild-commands');
 
-const counterFile = path.join(__dirname, '../verse-counter.json');
+const counterFile = path.join(__dirname, '../data/verse-counter.json');
 
 function loadCounter() {
   try {
@@ -43,7 +43,7 @@ module.exports = {
 
     let dynamicChannelIds = [];
     try {
-      const rawData = fs.readFileSync(path.join(__dirname, '../votd-channels.json'), 'utf8');
+      const rawData = fs.readFileSync(path.join(__dirname, '../data/votd-channels.json'), 'utf8');
       const parsed = JSON.parse(rawData);
       dynamicChannelIds = parsed.channelIds || [];
     } catch (err) {

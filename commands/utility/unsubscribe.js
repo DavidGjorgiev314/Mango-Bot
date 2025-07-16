@@ -5,7 +5,7 @@ const { canExecuteCommand } = require('../../rate-limiter');
 
 const OWNER_ID = '312920065093664780';
 const OWNER_GUILD_ID = '602663660288213013';
-const channelsFilePath = path.join(__dirname, '../../votd-channels.json');
+const channelsFilePath = path.join(__dirname, '../../data/votd-channels.json');
 
 module.exports = {
 	category: 'utility',
