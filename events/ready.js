@@ -3,7 +3,7 @@ const path = require('path');
 const { Events, TextChannel } = require('discord.js');
 const cron = require('node-cron');
 const { sendVerseOfTheDayToChannel } = require('./autoverse');
-const { deployCommandsToGuilds } = require('../deploy-guild-commands');
+const { deployCommandsToGuilds } = require('../deploy/deploy-guild-commands');
 
 const counterFile = path.join(__dirname, '../data/verse-counter.json');
 

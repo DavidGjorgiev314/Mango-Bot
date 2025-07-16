@@ -1,7 +1,7 @@
 const {
 	SlashCommandBuilder,
 } = require('discord.js');
-const disconnectTimers = require('../../disconnectTimers');
+const disconnectTimers = require('../../scripts/disconnectTimers');
 
 module.exports = {
 	category: 'utility',

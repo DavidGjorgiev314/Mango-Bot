@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require('discord.js');
-const { deployCommandsToGuilds } = require('../../deploy-guild-commands');
+const { deployCommandsToGuilds } = require('../../deploy/deploy-guild-commands');
 
 module.exports = {
 	category: 'utility',

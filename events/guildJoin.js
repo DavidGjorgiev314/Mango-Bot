@@ -1,5 +1,5 @@
 const config = require("../config.json");
-const { deployGuildCommands } = require("../deployCommands.js");
+const { deployGuildCommands } = require("../deploy/deployCommands.js");
 
 module.exports = {
     name: 'guildCreate',

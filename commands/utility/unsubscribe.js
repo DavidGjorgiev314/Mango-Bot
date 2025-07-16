@@ -1,7 +1,7 @@
 const { SlashCommandBuilder } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
-const { canExecuteCommand } = require('../../rate-limiter');
+const { canExecuteCommand } = require('../../scripts/rate-limiter');
 
 const OWNER_ID = '312920065093664780';
 const OWNER_GUILD_ID = '602663660288213013';
