@@ -12,7 +12,7 @@ module.exports = {
 	
 	async execute(interaction) {
 		if (!fs.existsSync(levelsFilePath)) {
-			return interaction.reply({ content: '⚠️ Levels file not found.', ephemeral: true });
+			return interaction.reply({ content: '⚠️ Levels file not found.', flags: 64 });
 		}
 
 		let levels;
@@ -21,11 +21,16 @@ module.exports = {
 			levels = JSON.parse(rawData);
 		} catch (err) {
 			console.error('Error reading levels.json:', err);
-			return interaction.reply({ content: '❌ Failed to read levels data.', ephemeral: true });
+			return interaction.reply({ content: '❌ Failed to read levels data.', flags: 64 });
 		}
 
 		const sorted = Object.entries(levels)
-			.sort(([, a], [, b]) => b.xp - a.xp)
+			.sort(([, a], [, b]) => {
+				if (b.level === a.level) {
+					return (b.totalXp || 0) - (a.totalXp || 0);
+				}
+				return b.level - a.level;
+			})
 			.slice(0, 10);
 
 		const leaderboard = await Promise.all(
@@ -33,9 +38,9 @@ module.exports = {
 				try {
 					const member = await interaction.guild.members.fetch(userId);
 					const name = member.displayName;
-					return `**${index + 1}.** ${name} — Level ${data.level} (${data.xp} XP)`;
+					return `**${index + 1}.** ${name} — Level ${data.level} (${data.totalXp || 0} XP)`;
 				} catch {
-					return `**${index + 1}.** Unknown User (${userId}) — Level ${data.level} (${data.xp} XP)`;
+					return `**${index + 1}.** Unknown User (${userId}) — Level ${data.level} (${data.totalXp || 0} total XP)`;
 				}
 			})
 		);

@@ -27,21 +27,18 @@ module.exports = {
 		}
 
 		if (!levels[userId]) {
-			return interaction.reply({ content: '📭 You have no level or XP data yet.' });
+			return interaction.reply({ content: '📭 You have no level or XP data yet.', flags: 64 });
 		}
 
 		const { level, xp } = levels[userId];
 		const name = interaction.member?.displayName ?? interaction.user.username;
 
-		const nextLevelXp = (level + 1) * 100;
-		const currentLevelXp = level * 100;
-		const progress = xp - currentLevelXp;
-		const needed = nextLevelXp - currentLevelXp;
-		const percent = Math.floor((progress / needed) * 100);
+		const nextLevelXp = level * 100;
+		const percent = Math.floor((xp / nextLevelXp) * 100);
 
 		return interaction.reply(
-			`☦️ **${name}**, you are level **${level}** with **${xp} XP**! 🌟\n` +
-			`📈 Progress to next level: **${progress}/${needed} XP** (${percent}%)`
+			`☦️ **${name}**, you are level **${level}** with **${xp}/${nextLevelXp} XP**! 🌟\n` +
+			`📈 Progress to next level: **${percent}%**`
 		);
 	}
 };

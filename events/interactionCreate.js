@@ -19,7 +19,8 @@ module.exports = {
                     xp: 0,
                     level: 1,
                     lastClick: 0,
-                    claimed: []
+                    claimed: [],
+                    totalXp: 0
                 };
             }
 
@@ -50,10 +51,11 @@ module.exports = {
 
                 const xpGain = 50;
                 userData.xp += xpGain;
+                userData.totalXp = (userData.totalXp || 0) + xpGain;
                 userData.claimed.push(messageId);
 
                 const xpNeeded = userData.level * 100;
-                let reply = `✅ Good job reading your daily bible verse! You gained ${xpGain} XP! (Level ${userData.level})`;
+                let reply = `✅ Good job reading your daily bible verse! You gained ${xpGain} XP! (Level ${userData.level})\nDon't forget to read your Bible too!`;
 
                 if (userData.xp >= xpNeeded) {
                     userData.level++;
@@ -80,9 +82,9 @@ module.exports = {
         } catch (error) {
             console.error(error);
             if (interaction.replied || interaction.deferred) {
-                await interaction.followUp({ content: 'There was an error while executing this command!', ephemeral: true });
+                await interaction.followUp({ content: 'There was an error while executing this command!', flags: 64 });
             } else {
-                await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+                await interaction.reply({ content: 'There was an error while executing this command!', flags:64 });
             }
         }
     },
