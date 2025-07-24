@@ -9,7 +9,7 @@ module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('leaderboard')
 		.setDescription('Show the top 10 users by XP'),
-	
+
 	async execute(interaction) {
 		if (!fs.existsSync(levelsFilePath)) {
 			return interaction.reply({ content: '⚠️ Levels file not found.', flags: 64 });
@@ -36,11 +36,18 @@ module.exports = {
 		const leaderboard = await Promise.all(
 			sorted.map(async ([userId, data], index) => {
 				try {
-					const member = await interaction.guild.members.fetch(userId);
-					const name = member.displayName;
-					return `**${index + 1}.** ${name} — Level ${data.level} (${data.totalXp || 0} XP)`;
+					let displayName;
+					try {
+						const member = await interaction.guild.members.fetch(userId);
+						displayName = member.displayName;
+					} catch {
+						const user = await interaction.client.users.fetch(userId);
+						displayName = user.globalName || user.username;
+					}
+
+					return `**${index + 1}.** ${displayName} — Level ${data.level} (${data.totalXp || 0} XP)`;
 				} catch {
-					return `**${index + 1}.** Unknown User (${userId}) — Level ${data.level} (${data.totalXp || 0} total XP)`;
+					return `**${index + 1}.** Unknown User (${userId}) — Level ${data.level} (${data.totalXp || 0} XP)`;
 				}
 			})
 		);
