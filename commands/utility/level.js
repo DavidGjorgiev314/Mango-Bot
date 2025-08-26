@@ -35,10 +35,13 @@ module.exports = {
 
 		const nextLevelXp = level * 100;
 		const percent = Math.floor((xp / nextLevelXp) * 100);
+		const totalBars = 15;
+		const filledBars = Math.round((percent / 100) * totalBars);
+		const progress_bar = "▰".repeat(filledBars) + "▱".repeat(totalBars - filledBars);
 
 		return interaction.reply(
 			`☦️ **${name}**, you are level **${level}** with **${xp}/${nextLevelXp} XP**! 🌟\n` +
-			`📈 Progress to next level: **${percent}%**`
+			`📈 ${progress_bar} **${percent}%**`
 		);
 	}
 };

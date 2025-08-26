@@ -44,8 +44,14 @@ module.exports = {
 						const user = await interaction.client.users.fetch(userId);
 						displayName = user.globalName || user.username;
 					}
-
-					return `**${index + 1}.** ${displayName} — Level ${data.level} (${data.totalXp || 0} XP)`;
+					if(index == 0)
+						return `**${index + 1}.🏆 ${displayName} — Level ${data.level} (${data.totalXp || 0} XP)**`;
+					if(index == 1)
+						return `**${index + 1}.**🥈 ${displayName} — Level ${data.level} (${data.totalXp || 0} XP)`;
+					if(index == 2)
+						return `**${index + 1}.**🥉 ${displayName} — Level ${data.level} (${data.totalXp || 0} XP)`;
+					else
+						return `**${index + 1}.** ${displayName} — Level ${data.level} (${data.totalXp || 0} XP)`;
 				} catch {
 					return `**${index + 1}.** Unknown User (${userId}) — Level ${data.level} (${data.totalXp || 0} XP)`;
 				}
