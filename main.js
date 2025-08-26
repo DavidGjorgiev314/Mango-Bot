@@ -62,3 +62,5 @@ process.on('uncaughtException', (error) => {
 });
 
 client.login(token);
+
+require('./events/birthdayScheduler');
