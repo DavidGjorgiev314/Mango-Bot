@@ -2,6 +2,7 @@ const { Events } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
 const levelsFilePath = path.join(__dirname, '../data/levels.json');
+const { loadCounter } = require('./ready');
 
 let levels = {};
 if (fs.existsSync(levelsFilePath)) {
@@ -48,19 +49,29 @@ module.exports = {
                         flags: 64
                     });
                 }
-
-                const xpGain = 50;
+                
+                let reply;
+                let xpGain = 50;
+                currentVerseCount = loadCounter();
+                if(currentVerseCount % 10 == 0) {
+                    xpGain = 100;
+                    userData.xp += xpGain;
+                    userData.totalXp = (userData.totalXp || 0) + xpGain;
+                    userData.claimed.push(messageId);
+                    reply = `✅ Bible verse read! **+${xpGain} XP** (Level ${userData.level})\nThat's double xp than usual 👀\n📖 Don't forget to read your Bible too!`;
+                } else {
                 userData.xp += xpGain;
                 userData.totalXp = (userData.totalXp || 0) + xpGain;
                 userData.claimed.push(messageId);
+                reply = `✅ Bible verse read! +${xpGain} XP (Level ${userData.level})\n📖 Don't forget to read your Bible too!`;
+                }
 
                 const xpNeeded = userData.level * 100;
-                let reply = `✅ Good job reading your daily bible verse! You gained ${xpGain} XP! (Level ${userData.level})\nDon't forget to read your Bible too!`;
 
                 if (userData.xp >= xpNeeded) {
                     userData.level++;
                     userData.xp -= xpNeeded;
-                    reply = `🆙 You leveled up to level ${userData.level}! (+${xpGain} XP)`;
+                    reply = `🚀 You leveled up to level ${userData.level}! (+${xpGain} XP)`;
                 }
 
                 fs.writeFileSync(levelsFilePath, JSON.stringify(levels, null, 2));
