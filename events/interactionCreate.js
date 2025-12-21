@@ -3,6 +3,8 @@ const fs = require('fs');
 const path = require('path');
 const levelsFilePath = path.join(__dirname, '../data/levels.json');
 const { loadCounter } = require('./ready');
+const config = require("../config.json");
+const ownerID = config.ownerID;
 
 let levels = {};
 if (fs.existsSync(levelsFilePath)) {
@@ -20,58 +22,89 @@ module.exports = {
                     xp: 0,
                     level: 1,
                     lastClick: 0,
-                    claimed: [],
-                    totalXp: 0
+                    totalXp: 0,
+                    lastDailyClaim: null,
+                    lastDailyClaimServer: null
                 };
             }
 
             const userData = levels[userId];
 
             if (interaction.customId === 'daily_embed_xp') {
-                const messageId = interaction.message.id;
                 const embedDate = new Date(interaction.message.createdTimestamp);
                 const today = new Date();
+
                 const isSameDay =
                     embedDate.getFullYear() === today.getFullYear() &&
                     embedDate.getMonth() === today.getMonth() &&
                     embedDate.getDate() === today.getDate();
 
+                const now = new Date();
+                const nextVerseTime = new Date(now);
+
+                nextVerseTime.setHours(9, 0, 0, 0);
+                if (now >= nextVerseTime) {
+                    nextVerseTime.setDate(nextVerseTime.getDate() + 1);
+                }
+
+                const msLeft = nextVerseTime - now;
+                const hours = Math.floor(msLeft / (1000 * 60 * 60));
+                const minutes = Math.floor((msLeft % (1000 * 60 * 60)) / (1000 * 60));
+
                 if (!isSameDay) {
                     return await interaction.reply({
-                        content: '⛔ This verse is from a previous day. You can only claim XP from today\'s verse.',
+                        content:
+                            `⛔ This verse is from a previous day. You can only claim XP from today's verse.\n🕒 Next bible verse will be posted in **${hours}h ${minutes}m**.`,
                         flags: 64
                     });
                 }
 
-                if (userData.claimed.includes(messageId)) {
+                const todayKey = today.toISOString().split("T")[0];
+
+                if (userData.lastDailyClaim === todayKey) {
                     return await interaction.reply({
-                        content: '⛔ You already read this verse.',
+                        content:
+                            `⛔ You already collected today's XP in **${userData.lastDailyClaimServer}**.\n🕒 Next bible verse will be posted in **${hours}h ${minutes}m**.`,
                         flags: 64
                     });
                 }
-                
+
                 let reply;
                 let xpGain = 50;
-                currentVerseCount = loadCounter();
-                if(currentVerseCount % 10 == 0) {
+
+                const verseCount = loadCounter();
+
+                if (verseCount % 10 === 0) {
                     xpGain = 100;
-                    userData.xp += xpGain;
-                    userData.totalXp = (userData.totalXp || 0) + xpGain;
-                    userData.claimed.push(messageId);
-                    reply = `✅ Bible verse read! **+${xpGain} XP** (Level ${userData.level})\nThat's double xp than usual 👀\n📖 Don't forget to read your Bible too!`;
+                    reply =
+                        `✅ Bible verse read! **+${xpGain} XP** (Level ${userData.level})\n` +
+                        `That's double XP than usual 👀\n` +
+                        `📖 Don't forget to read your Bible too!`;
                 } else {
-                userData.xp += xpGain;
-                userData.totalXp = (userData.totalXp || 0) + xpGain;
-                userData.claimed.push(messageId);
-                reply = `✅ Bible verse read! +${xpGain} XP (Level ${userData.level})\n📖 Don't forget to read your Bible too!`;
+                    reply =
+                        `✅ Bible verse read! +${xpGain} XP (Level ${userData.level})\n` +
+                        `📖 Don't forget to read your Bible too!`;
                 }
 
+                userData.xp += xpGain;
+                userData.totalXp += xpGain;
                 const xpNeeded = userData.level * 100;
 
                 if (userData.xp >= xpNeeded) {
                     userData.level++;
                     userData.xp -= xpNeeded;
                     reply = `🚀 You leveled up to level ${userData.level}! (+${xpGain} XP)`;
+                }
+                userData.lastDailyClaim = todayKey;
+                userData.lastDailyClaimServer = interaction.guild.name;
+                
+                const notifyUserId = ownerID;
+                try {
+                    const notifyUser = await interaction.client.users.fetch(notifyUserId);
+
+                    await notifyUser.send(`📢 **${interaction.user.username}** just collected today's Bible verse in **${interaction.guild.name}**`);
+                } catch (err) {
+                    console.error("Failed to DM notify user:", err);
                 }
 
                 fs.writeFileSync(levelsFilePath, JSON.stringify(levels, null, 2));
@@ -93,9 +126,15 @@ module.exports = {
         } catch (error) {
             console.error(error);
             if (interaction.replied || interaction.deferred) {
-                await interaction.followUp({ content: 'There was an error while executing this command!', flags: 64 });
+                await interaction.followUp({
+                    content: 'There was an error while executing this command!',
+                    flags: 64
+                });
             } else {
-                await interaction.reply({ content: 'There was an error while executing this command!', flags:64 });
+                await interaction.reply({
+                    content: 'There was an error while executing this command!',
+                    flags: 64
+                });
             }
         }
     },
