@@ -5,6 +5,8 @@ const levelsFilePath = path.join(__dirname, '../data/levels.json');
 const { loadCounter } = require('./ready');
 const config = require("../config.json");
 const ownerID = config.ownerID;
+const axios = require('axios');
+const cheerio = require('cheerio');
 
 let levels = {};
 if (fs.existsSync(levelsFilePath)) {
@@ -97,7 +99,7 @@ module.exports = {
                 }
                 userData.lastDailyClaim = todayKey;
                 userData.lastDailyClaimServer = interaction.guild.name;
-                
+
                 const notifyUserId = ownerID;
                 try {
                     const notifyUser = await interaction.client.users.fetch(notifyUserId);
@@ -109,6 +111,18 @@ module.exports = {
 
                 fs.writeFileSync(levelsFilePath, JSON.stringify(levels, null, 2));
                 return await interaction.reply({ content: reply, flags: 64 });
+            }
+
+            if(interaction.customId === 'translate') {
+                const url = 'https://www.bible.com/mk/verse-of-the-day';
+                    const response = await axios.get(url);
+                    const $ = cheerio.load(response.data);
+                
+                    const verseText = $('div[class*="border"] a').first().text().trim();
+                    const verseReference = $('div[class*="border"] p').first().text().trim();
+
+                    translation_reply = `📖 **${verseReference}**\n${verseText}`;
+                    return await interaction.reply({ content: translation_reply, flags: 64 });
             }
         }
 

@@ -45,15 +45,19 @@ async function sendVerseOfTheDayToChannel(channel, counter) {
       return;
     }
 
-    const button = new ButtonBuilder()
-      .setCustomId('daily_embed_xp')
-      .setLabel('📖 Read')
-      .setStyle(ButtonStyle.Success);
+    const read_button = new ButtonBuilder()
+     .setCustomId('daily_embed_xp')
+     .setLabel('Read')
+     .setEmoji('📖')
+     .setStyle(ButtonStyle.Success);
 
-    const row = new ActionRowBuilder().addComponents(button);
+     const translate_button = new ButtonBuilder()
+     .setCustomId('translate')
+     .setLabel(`Translate`)
+     .setEmoji('🇲🇰')
+     .setStyle(ButtonStyle.Primary);
 
-    const sentMessage = await channel.send({ embeds: [embed], components: [row] });
-
+    const row = new ActionRowBuilder().addComponents(read_button, translate_button);
     console.log(`Verse of the Day embed #${counter} sent.`);
   } catch (error) {
     console.error('Error sending embed:', error.message);
@@ -62,4 +66,5 @@ async function sendVerseOfTheDayToChannel(channel, counter) {
 
 module.exports = {
   sendVerseOfTheDayToChannel,
+  getVerseOfTheDay
 };
