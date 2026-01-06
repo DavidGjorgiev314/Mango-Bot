@@ -30,10 +30,17 @@ module.exports = {
      .setCustomId('translate')
      .setLabel(`Translate`)
      .setEmoji('🇲🇰')
+     .setStyle(ButtonStyle.Secondary);
+
+     const reflect_button = new ButtonBuilder()
+     .setCustomId('reflect')
+     .setLabel(`Reflect`)
+     .setEmoji('✍️')
      .setStyle(ButtonStyle.Primary);
 
      const row = new ActionRowBuilder().addComponents(
      read_button,
+     reflect_button,
      translate_button
      );
 
