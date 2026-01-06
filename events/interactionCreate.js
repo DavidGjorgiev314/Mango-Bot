@@ -1,155 +1,316 @@
-const { Events } = require('discord.js');
+const { Events, EmbedBuilder } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
 const levelsFilePath = path.join(__dirname, '../data/levels.json');
+const ownerSummaryPath = path.join(__dirname, '../data/ownerSummary.json');
 const { loadCounter } = require('./ready');
 const config = require("../config.json");
 const ownerID = config.ownerID;
 const axios = require('axios');
 const cheerio = require('cheerio');
+const {
+  ModalBuilder,
+  TextInputBuilder,
+  TextInputStyle,
+  ActionRowBuilder
+} = require('discord.js');
+
+function todayKey() {
+  return new Date().toISOString().split("T")[0];
+}
+
+function formatEU(dateStr) {
+  if (!dateStr) return "Never";
+  if (dateStr === todayKey()) return "Today";
+  const [y, m, d] = dateStr.split("-");
+  return `${d}.${m}.${y}`;
+}
 
 let levels = {};
 if (fs.existsSync(levelsFilePath)) {
-    levels = JSON.parse(fs.readFileSync(levelsFilePath));
+  levels = JSON.parse(fs.readFileSync(levelsFilePath));
 }
 
+let meta = {
+  lastActivityUser: null,
+  lastActivityDate: null
+};
+
+const metaFilePath = path.join(__dirname, '../data/meta.json');
+
+if (fs.existsSync(metaFilePath)) {
+  meta = JSON.parse(fs.readFileSync(metaFilePath));
+}
+
+
 module.exports = {
-    name: Events.InteractionCreate,
-    async execute(interaction) {
-        if (interaction.isButton()) {
-            const userId = interaction.user.id;
+  name: Events.InteractionCreate,
+  async execute(interaction) {
 
-            if (!levels[userId]) {
-                levels[userId] = {
-                    xp: 0,
-                    level: 1,
-                    lastClick: 0,
-                    totalXp: 0,
-                    lastDailyClaim: null,
-                    lastDailyClaimServer: null
-                };
-            }
+    /* ===================== OWNER SUMMARY ===================== */
 
-            const userData = levels[userId];
+async function updateOwnerSummary(client) {
+  const owner = await client.users.fetch(ownerID);
+  let summaryData = { messageId: null };
+  if (fs.existsSync(ownerSummaryPath)) {
+    summaryData = JSON.parse(fs.readFileSync(ownerSummaryPath));
+  }
 
-            if (interaction.customId === 'daily_embed_xp') {
-                const embedDate = new Date(interaction.message.createdTimestamp);
-                const today = new Date();
+  const embed = new EmbedBuilder()
+    .setTitle("📖 Daily Bible Activity Summary")
+    .setColor(0x8b5cf6)
+    .setTimestamp();
 
-                const isSameDay =
-                    embedDate.getFullYear() === today.getFullYear() &&
-                    embedDate.getMonth() === today.getMonth() &&
-                    embedDate.getDate() === today.getDate();
+  for (const [userId, data] of Object.entries(levels)) {
+  let displayName = "Unknown User";
 
-                const now = new Date();
-                const nextVerseTime = new Date(now);
+  try {
+    const user = await client.users.fetch(userId);
+    displayName = user.globalName || user.username;
+  } catch {
+    // user left Discord or can't be fetched
+  }
 
-                nextVerseTime.setHours(9, 0, 0, 0);
-                if (now >= nextVerseTime) {
-                    nextVerseTime.setDate(nextVerseTime.getDate() + 1);
-                }
+  const isLastUpdater = userId === meta.lastActivityUser;
+  const dot = isLastUpdater ? ' •' : '';
 
-                const msLeft = nextVerseTime - now;
-                const hours = Math.floor(msLeft / (1000 * 60 * 60));
-                const minutes = Math.floor((msLeft % (1000 * 60 * 60)) / (1000 * 60));
+  embed.addFields({
+    name: `👤 ${displayName}${dot}`,
+    value:
+      `📘 Read: **${formatEU(data.lastDailyClaim)}**\n` +
+      `✍️ Reflected: **${formatEU(data.lastReflection)}**`,
+    inline: false
+  });
+}
 
-                if (!isSameDay) {
-                    return await interaction.reply({
-                        content:
-                            `⛔ This verse is from a previous day. You can only claim XP from today's verse.\n🕒 Next bible verse will be posted in **${hours}h ${minutes}m**.`,
-                        flags: 64
-                    });
-                }
 
-                const todayKey = today.toISOString().split("T")[0];
+  if (summaryData.messageId) {
+    try {
+      const msg = await owner.dmChannel.messages.fetch(summaryData.messageId);
+      await msg.edit({ embeds: [embed] });
+      return;
+    } catch {
+      summaryData.messageId = null;
+    }
+  }
 
-                if (userData.lastDailyClaim === todayKey) {
-                    return await interaction.reply({
-                        content:
-                            `⛔ You already collected today's XP in **${userData.lastDailyClaimServer}**.\n🕒 Next bible verse will be posted in **${hours}h ${minutes}m**.`,
-                        flags: 64
-                    });
-                }
+  const sent = await owner.send({ embeds: [embed] });
+  summaryData.messageId = sent.id;
+  fs.writeFileSync(ownerSummaryPath, JSON.stringify(summaryData, null, 2));
+}
 
-                let reply;
-                let xpGain = 50;
+    /* ===================== BUTTON INTERACTIONS ===================== */
 
-                const verseCount = loadCounter();
+    if (interaction.isButton()) {
+      const userId = interaction.user.id;
 
-                if (verseCount % 10 === 0) {
-                    xpGain = 100;
-                    reply =
-                        `✅ Bible verse read! **+${xpGain} XP** (Level ${userData.level})\n` +
-                        `That's double XP than usual 👀\n` +
-                        `📖 Don't forget to read your Bible too!`;
-                } else {
-                    reply =
-                        `✅ Bible verse read! +${xpGain} XP (Level ${userData.level})\n` +
-                        `📖 Don't forget to read your Bible too!`;
-                }
+      if (!levels[userId]) {
+        levels[userId] = {
+          xp: 0,
+          level: 1,
+          lastClick: 0,
+          totalXp: 0,
+          lastDailyClaim: null,
+          lastDailyClaimServer: null,
+          lastReflection: null
+        };
+      }
 
-                userData.xp += xpGain;
-                userData.totalXp += xpGain;
-                const xpNeeded = userData.level * 100;
+      const userData = levels[userId];
 
-                if (userData.xp >= xpNeeded) {
-                    userData.level++;
-                    userData.xp -= xpNeeded;
-                    reply = `🚀 You leveled up to level ${userData.level}! (+${xpGain} XP)`;
-                }
-                userData.lastDailyClaim = todayKey;
-                userData.lastDailyClaimServer = interaction.guild.name;
+      /* ---------- READ (XP) ---------- */
+      if (interaction.customId === 'daily_embed_xp') {
+        const embedDate = new Date(interaction.message.createdTimestamp);
+        const today = new Date();
 
-                const notifyUserId = ownerID;
-                try {
-                    const notifyUser = await interaction.client.users.fetch(notifyUserId);
+        const isSameDay =
+          embedDate.getFullYear() === today.getFullYear() &&
+          embedDate.getMonth() === today.getMonth() &&
+          embedDate.getDate() === today.getDate();
 
-                    await notifyUser.send(`📢 **${interaction.user.username}** just collected today's Bible verse in **${interaction.guild.name}**`);
-                } catch (err) {
-                    console.error("Failed to DM notify user:", err);
-                }
+        const now = new Date();
+        const nextVerseTime = new Date(now);
+        nextVerseTime.setHours(9, 0, 0, 0);
+        if (now >= nextVerseTime) nextVerseTime.setDate(nextVerseTime.getDate() + 1);
 
-                fs.writeFileSync(levelsFilePath, JSON.stringify(levels, null, 2));
-                return await interaction.reply({ content: reply, flags: 64 });
-            }
+        const msLeft = nextVerseTime - now;
+        const hours = Math.floor(msLeft / (1000 * 60 * 60));
+        const minutes = Math.floor((msLeft % (1000 * 60 * 60)) / (1000 * 60));
 
-            if(interaction.customId === 'translate') {
-                const url = 'https://www.bible.com/mk/verse-of-the-day';
-                    const response = await axios.get(url);
-                    const $ = cheerio.load(response.data);
-                
-                    const verseText = $('div[class*="border"] a').first().text().trim();
-                    const verseReference = $('div[class*="border"] p').first().text().trim();
-
-                    translation_reply = `📖 **${verseReference}**\n${verseText}`;
-                    return await interaction.reply({ content: translation_reply, flags: 64 });
-            }
+        if (!isSameDay) {
+          return interaction.reply({
+            content:
+              `⛔ This verse is from a previous day.\n🕒 Next bible verse in **${hours}h ${minutes}m**.`,
+            flags: 64
+          });
         }
 
-        if (!interaction.isChatInputCommand()) return;
+        const todayStr = todayKey();
 
-        const command = interaction.client.commands.get(interaction.commandName);
-
-        if (!command) {
-            console.error(`No command matching ${interaction.commandName} was found.`);
-            return;
+        if (userData.lastDailyClaim === todayStr) {
+          return interaction.reply({
+            content:
+              `⛔ You already collected today's XP in **${userData.lastDailyClaimServer}**.`,
+            flags: 64
+          });
         }
 
-        try {
-            await command.execute(interaction, interaction.client);
-        } catch (error) {
-            console.error(error);
-            if (interaction.replied || interaction.deferred) {
-                await interaction.followUp({
-                    content: 'There was an error while executing this command!',
-                    flags: 64
-                });
-            } else {
-                await interaction.reply({
-                    content: 'There was an error while executing this command!',
-                    flags: 64
-                });
-            }
+        let xpGain = 50;
+        let reply;
+
+        const verseCount = loadCounter();
+        if (verseCount % 5 === 0) {
+          xpGain = 100;
+          reply = `✅ Nice **+${xpGain} XP** (DOUBLE XP 👀)`;
+        } else {
+          reply = `https://tenor.com/view/the-chosen-os-escolhidos-los-elegidos-jonathan-roumie-jesus-the-chosen-gif-1127020769398794637 \nNice 😁 **+${xpGain} XP**`;
         }
-    },
+
+        userData.xp += xpGain;
+        userData.totalXp += xpGain;
+
+        const xpNeeded = userData.level * 100;
+        if (userData.xp >= xpNeeded) {
+          userData.level++;
+          userData.xp -= xpNeeded;
+          reply = `🚀 You leveled up to level ${userData.level}!`;
+        }
+
+        userData.lastDailyClaim = todayStr;
+        userData.lastDailyClaimServer = interaction.guild.name;
+        meta.lastActivityUser = userId;
+        meta.lastActivityDate = new Date().toISOString();
+
+        fs.writeFileSync(metaFilePath, JSON.stringify(meta, null, 2));
+
+        await updateOwnerSummary(interaction.client);
+
+        fs.writeFileSync(levelsFilePath, JSON.stringify(levels, null, 2));
+        return interaction.reply({ content: reply, flags: 64 });
+      }
+
+      /* ---------- TRANSLATE ---------- */
+      if (interaction.customId === 'translate') {
+        const url = 'https://www.bible.com/mk/verse-of-the-day';
+        const response = await axios.get(url);
+        const $ = cheerio.load(response.data);
+
+        const verseText = $('div[class*="border"] a').first().text().trim();
+        const verseReference = $('div[class*="border"] p').first().text().trim();
+
+        return interaction.reply({
+          content: `📖 **${verseReference}**\n${verseText}`,
+          flags: 64
+        });
+      }
+
+      /* ---------- REFLECT (OPEN MODAL) ---------- */
+      if (interaction.customId === 'reflect') {
+        const modal = new ModalBuilder()
+          .setCustomId('reflect_modal')
+          .setTitle('Daily Bible Reflection ✝️');
+
+        const input = new TextInputBuilder()
+          .setCustomId('reflection_text')
+          .setLabel('What does this verse mean to you today?')
+          .setStyle(TextInputStyle.Paragraph)
+          .setMinLength(20)
+          .setRequired(true);
+
+        modal.addComponents(new ActionRowBuilder().addComponents(input));
+        return interaction.showModal(modal);
+      }
+    }
+
+    /* ===================== MODAL SUBMIT ===================== */
+
+    if (interaction.isModalSubmit() && interaction.customId === 'reflect_modal') {
+      const userId = interaction.user.id;
+      const todayStr = todayKey();
+
+      if (!levels[userId]) {
+        levels[userId] = {
+          xp: 0,
+          level: 1,
+          lastClick: 0,
+          totalXp: 0,
+          lastDailyClaim: null,
+          lastDailyClaimServer: null,
+          lastReflection: null
+        };
+      }
+
+      const userData = levels[userId];
+
+      const embedDate = new Date(interaction.message.createdTimestamp);
+      const today = new Date();
+      const isSameDay =
+        embedDate.getFullYear() === today.getFullYear() &&
+        embedDate.getMonth() === today.getMonth() &&
+        embedDate.getDate() === today.getDate();
+
+      const reflection = interaction.fields.getTextInputValue('reflection_text');
+
+      const verseReference =
+        interaction.message?.embeds?.[0]?.description
+          ?.split('\n')[0]
+          ?.replace('📖 **', '')
+          ?.replace('**', '') || 'Unknown Verse';
+
+      let xpAwarded = false;
+
+      if (isSameDay && userData.lastReflection !== todayStr) {
+        const xpGain = 20;
+        userData.xp += xpGain;
+        userData.totalXp += xpGain;
+        userData.lastReflection = todayStr;
+        xpAwarded = true;
+
+        const xpNeeded = userData.level * 100;
+        if (userData.xp >= xpNeeded) {
+          userData.level++;
+          userData.xp -= xpNeeded;
+        }
+      }
+      meta.lastActivityUser = userId;
+      meta.lastActivityDate = new Date().toISOString();
+
+      fs.writeFileSync(metaFilePath, JSON.stringify(meta, null, 2));
+
+      fs.writeFileSync(levelsFilePath, JSON.stringify(levels, null, 2));
+      await updateOwnerSummary(interaction.client);
+
+      try {
+        await interaction.user.send(
+          `✝️ **Daily Bible Reflection**\n\n📖 Verse:**${verseReference}**\n\n✍️ **Your reflection:**\n${reflection}`
+        );
+      } catch (err) {
+        console.error(err);
+      }
+
+      return interaction.reply({
+        content: xpAwarded
+          ? '🙏 Reflection saved in your DMs. **+20 XP**'
+          : '🙏 Reflection saved in your DMs.',
+        flags: 64
+      });
+    }
+
+    /* ===================== SLASH COMMANDS ===================== */
+
+    if (!interaction.isChatInputCommand()) return;
+
+    const command = interaction.client.commands.get(interaction.commandName);
+    if (!command) return;
+
+    try {
+      await command.execute(interaction, interaction.client);
+    } catch (error) {
+      console.error(error);
+      await interaction.reply({
+        content: 'There was an error executing this command.',
+        flags: 64
+      });
+    }
+  },
 };

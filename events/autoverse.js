@@ -55,9 +55,19 @@ async function sendVerseOfTheDayToChannel(channel, counter) {
      .setCustomId('translate')
      .setLabel(`Translate`)
      .setEmoji('🇲🇰')
+     .setStyle(ButtonStyle.Secondary);
+
+     const reflect_button = new ButtonBuilder()
+     .setCustomId('reflect')
+     .setLabel(`Reflect`)
+     .setEmoji('✍️')
      .setStyle(ButtonStyle.Primary);
 
-    const row = new ActionRowBuilder().addComponents(read_button, translate_button);
+     const row = new ActionRowBuilder().addComponents(
+     read_button,
+     reflect_button,
+     translate_button
+     );
     console.log(`Verse of the Day embed #${counter} sent.`);
   } catch (error) {
     console.error('Error sending embed:', error.message);
