@@ -19,7 +19,7 @@ async function getVerseOfTheDay(counter) {
     const embed = new EmbedBuilder()
       .setTitle(`:cross: Bible Verse of the Day (#${counter}) :cross:`)
       .setDescription(`📖 **${verseReference}**\n${verseText}`)
-      .setColor('#00FFFF')
+      .setColor('Random')
       .setFooter({
         text: 'Read your Bible! Verse fetched from Bible.com',
         iconURL: 'https://www.bible.com/favicon.ico',
