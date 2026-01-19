@@ -5,6 +5,7 @@ const levelsFilePath = path.join(__dirname, '../data/levels.json');
 const ownerSummaryPath = path.join(__dirname, '../data/ownerSummary.json');
 const { loadCounter } = require('./ready');
 const config = require("../config.json");
+const summaryChannelId = config.summaryChannelId;
 const ownerID = config.ownerID;
 const axios = require('axios');
 const cheerio = require('cheerio');
@@ -50,11 +51,13 @@ module.exports = {
     /* ===================== OWNER SUMMARY ===================== */
 
 async function updateOwnerSummary(client) {
-  const owner = await client.users.fetch(ownerID);
   let summaryData = { messageId: null };
   if (fs.existsSync(ownerSummaryPath)) {
     summaryData = JSON.parse(fs.readFileSync(ownerSummaryPath));
   }
+
+  const channel = await client.channels.fetch(summaryChannelId);
+  if (!channel || !channel.isTextBased()) return;
 
   const embed = new EmbedBuilder()
     .setTitle("📖 Daily Bible Activity Summary")
@@ -62,31 +65,28 @@ async function updateOwnerSummary(client) {
     .setTimestamp();
 
   for (const [userId, data] of Object.entries(levels)) {
-  let displayName = "Unknown User";
+    let displayName = "Unknown User";
 
-  try {
-    const user = await client.users.fetch(userId);
-    displayName = user.globalName || user.username;
-  } catch {
-    // user left Discord or can't be fetched
+    try {
+      const user = await client.users.fetch(userId);
+      displayName = user.globalName || user.username;
+    } catch {}
+
+    const isLastUpdater = userId === meta.lastActivityUser;
+    const dot = isLastUpdater ? ' •' : '';
+
+    embed.addFields({
+      name: `👤 ${displayName}${dot}`,
+      value:
+        `📘 Read: **${formatEU(data.lastDailyClaim)}**\n` +
+        `✍️ Reflected: **${formatEU(data.lastReflection)}**`,
+      inline: false
+    });
   }
-
-  const isLastUpdater = userId === meta.lastActivityUser;
-  const dot = isLastUpdater ? ' •' : '';
-
-  embed.addFields({
-    name: `👤 ${displayName}${dot}`,
-    value:
-      `📘 Read: **${formatEU(data.lastDailyClaim)}**\n` +
-      `✍️ Reflected: **${formatEU(data.lastReflection)}**`,
-    inline: false
-  });
-}
-
 
   if (summaryData.messageId) {
     try {
-      const msg = await owner.dmChannel.messages.fetch(summaryData.messageId);
+      const msg = await channel.messages.fetch(summaryData.messageId);
       await msg.edit({ embeds: [embed] });
       return;
     } catch {
@@ -94,7 +94,7 @@ async function updateOwnerSummary(client) {
     }
   }
 
-  const sent = await owner.send({ embeds: [embed] });
+  const sent = await channel.send({ embeds: [embed] });
   summaryData.messageId = sent.id;
   fs.writeFileSync(ownerSummaryPath, JSON.stringify(summaryData, null, 2));
 }
