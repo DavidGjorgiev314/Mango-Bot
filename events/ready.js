@@ -4,6 +4,7 @@ const { Events, TextChannel } = require('discord.js');
 const cron = require('node-cron');
 const { sendVerseOfTheDayToChannel } = require('./autoverse');
 const { deployCommandsToGuilds } = require('../deploy/deploy-guild-commands');
+const sendDailyFast = require('./sendDailyFast');
 
 const counterFile = path.join(__dirname, '../data/verse-counter.json');
 
@@ -36,7 +37,7 @@ module.exports = {
     
     console.log(`Ready! Logged in as ${client.user.tag}`);
 
-   cron.schedule('0 13 * * *', async () => {
+   cron.schedule('0 9 * * *', async () => {
     let count = loadCounter();
     count++;
     saveCounter(count);
@@ -65,7 +66,12 @@ module.exports = {
         console.error(`Error sending verse to ${channelId}:`, error);
       }
     }
-  });
+  },
+  { timezone: 'Europe/Skopje' });
+  cron.schedule(
+    '0 0 * * *',
+    async () => { await sendDailyFast(client); },
+    { timezone: 'Europe/Skopje' });
   },
   loadCounter
 };
