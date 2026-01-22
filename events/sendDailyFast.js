@@ -32,6 +32,12 @@ module.exports = async function sendDailyFast(client) {
         emoji = `:salad:`;
       if(fastingRule == `Риба`)
         emoji = `:fish:`;
+      if(fastingRule == `Пост`) {
+        fastingRule == `Строг пост`;
+        emoji = `:salad:`;
+      }
+      if(fastingRule == `Без месо`)
+        emoji = `:cheese`;
       const user = await client.users.fetch(userId);
       await user.send(
         `Правило на пост за денес:\n${emoji} **${fastingRule}**`
