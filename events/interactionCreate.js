@@ -12,7 +12,8 @@ const cheerio = require('cheerio');
 const {
   ModalBuilder,
   TextInputBuilder,
-  TextInputStyle
+  TextInputStyle,
+  ActionRowBuilder
 } = require('discord.js');
 
 /* ===================== TIME OFFSET (SERVER - 1 HOUR) ===================== */
@@ -230,7 +231,7 @@ module.exports = {
           .setMinLength(20)
           .setRequired(true);
 
-        modal.addTextInputComponents(input);
+        modal.addComponents(new ActionRowBuilder().addComponents(input));
         return interaction.showModal(modal);
       }
     }
