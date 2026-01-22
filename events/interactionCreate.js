@@ -12,12 +12,23 @@ const cheerio = require('cheerio');
 const {
   ModalBuilder,
   TextInputBuilder,
-  TextInputStyle,
-  ActionRowBuilder
+  TextInputStyle
 } = require('discord.js');
 
+/* ===================== TIME OFFSET (SERVER - 1 HOUR) ===================== */
+
+const OFFSET_MS = -1 * 60 * 60 * 1000;
+
+function nowAdjusted() {
+  return new Date(Date.now() + OFFSET_MS);
+}
+
+function adjustDate(date) {
+  return new Date(date.getTime() + OFFSET_MS);
+}
+
 function todayKey() {
-  return new Date().toISOString().split("T")[0];
+  return nowAdjusted().toISOString().split("T")[0];
 }
 
 function formatEU(dateStr) {
@@ -26,6 +37,8 @@ function formatEU(dateStr) {
   const [y, m, d] = dateStr.split("-");
   return `${d}.${m}.${y}`;
 }
+
+/* ===================== DATA ===================== */
 
 let levels = {};
 if (fs.existsSync(levelsFilePath)) {
@@ -43,61 +56,60 @@ if (fs.existsSync(metaFilePath)) {
   meta = JSON.parse(fs.readFileSync(metaFilePath));
 }
 
-
 module.exports = {
   name: Events.InteractionCreate,
   async execute(interaction) {
 
     /* ===================== OWNER SUMMARY ===================== */
 
-async function updateOwnerSummary(client) {
-  let summaryData = { messageId: null };
-  if (fs.existsSync(ownerSummaryPath)) {
-    summaryData = JSON.parse(fs.readFileSync(ownerSummaryPath));
-  }
+    async function updateOwnerSummary(client) {
+      let summaryData = { messageId: null };
+      if (fs.existsSync(ownerSummaryPath)) {
+        summaryData = JSON.parse(fs.readFileSync(ownerSummaryPath));
+      }
 
-  const channel = await client.channels.fetch(summaryChannelId);
-  if (!channel || !channel.isTextBased()) return;
+      const channel = await client.channels.fetch(summaryChannelId);
+      if (!channel || !channel.isTextBased()) return;
 
-  const embed = new EmbedBuilder()
-    .setTitle("📖 Daily Bible Activity Summary")
-    .setColor(0x8b5cf6)
-    .setTimestamp();
+      const embed = new EmbedBuilder()
+        .setTitle("📖 Daily Bible Activity Summary")
+        .setColor(0x8b5cf6)
+        .setTimestamp();
 
-  for (const [userId, data] of Object.entries(levels)) {
-    let displayName = "Unknown User";
+      for (const [userId, data] of Object.entries(levels)) {
+        let displayName = "Unknown User";
 
-    try {
-      const user = await client.users.fetch(userId);
-      displayName = user.globalName || user.username;
-    } catch {}
+        try {
+          const user = await client.users.fetch(userId);
+          displayName = user.globalName || user.username;
+        } catch {}
 
-    const isLastUpdater = userId === meta.lastActivityUser;
-    const dot = isLastUpdater ? ' •' : '';
+        const isLastUpdater = userId === meta.lastActivityUser;
+        const dot = isLastUpdater ? ' •' : '';
 
-    embed.addFields({
-      name: `👤 ${displayName}${dot}`,
-      value:
-        `📘 Read: **${formatEU(data.lastDailyClaim)}**\n` +
-        `✍️ Reflected: **${formatEU(data.lastReflection)}**`,
-      inline: false
-    });
-  }
+        embed.addFields({
+          name: `👤 ${displayName}${dot}`,
+          value:
+            `📘 Read: **${formatEU(data.lastDailyClaim)}**\n` +
+            `✍️ Reflected: **${formatEU(data.lastReflection)}**`,
+          inline: false
+        });
+      }
 
-  if (summaryData.messageId) {
-    try {
-      const msg = await channel.messages.fetch(summaryData.messageId);
-      await msg.edit({ embeds: [embed] });
-      return;
-    } catch {
-      summaryData.messageId = null;
+      if (summaryData.messageId) {
+        try {
+          const msg = await channel.messages.fetch(summaryData.messageId);
+          await msg.edit({ embeds: [embed] });
+          return;
+        } catch {
+          summaryData.messageId = null;
+        }
+      }
+
+      const sent = await channel.send({ embeds: [embed] });
+      summaryData.messageId = sent.id;
+      fs.writeFileSync(ownerSummaryPath, JSON.stringify(summaryData, null, 2));
     }
-  }
-
-  const sent = await channel.send({ embeds: [embed] });
-  summaryData.messageId = sent.id;
-  fs.writeFileSync(ownerSummaryPath, JSON.stringify(summaryData, null, 2));
-}
 
     /* ===================== BUTTON INTERACTIONS ===================== */
 
@@ -120,15 +132,16 @@ async function updateOwnerSummary(client) {
 
       /* ---------- READ (XP) ---------- */
       if (interaction.customId === 'daily_embed_xp') {
-        const embedDate = new Date(interaction.message.createdTimestamp);
-        const today = new Date();
+
+        const embedDate = adjustDate(new Date(interaction.message.createdTimestamp));
+        const today = nowAdjusted();
 
         const isSameDay =
           embedDate.getFullYear() === today.getFullYear() &&
           embedDate.getMonth() === today.getMonth() &&
           embedDate.getDate() === today.getDate();
 
-        const now = new Date();
+        const now = nowAdjusted();
         const nextVerseTime = new Date(now);
         nextVerseTime.setHours(9, 0, 0, 0);
         if (now >= nextVerseTime) nextVerseTime.setDate(nextVerseTime.getDate() + 1);
@@ -161,9 +174,9 @@ async function updateOwnerSummary(client) {
         const verseCount = loadCounter();
         if (verseCount % 5 === 0) {
           xpGain = 100;
-          reply = `✅ Nice **+${xpGain} XP** (DOUBLE XP 👀)`;
+          reply = `https://tenor.com/view/the-chosen-jesus-andrew-simon-dancing-gif-18185342 \n# 📖 Nice **+${xpGain} XP** (DOUBLE XP 👀)`;
         } else {
-          reply = `https://tenor.com/view/the-chosen-os-escolhidos-los-elegidos-jonathan-roumie-jesus-the-chosen-gif-1127020769398794637 \nNice 😁 **+${xpGain} XP**`;
+          reply = `https://tenor.com/view/the-chosen-os-escolhidos-los-elegidos-jonathan-roumie-jesus-the-chosen-gif-1127020769398794637 \n# 📖 Nice 😁 **+${xpGain} XP**`;
         }
 
         userData.xp += xpGain;
@@ -173,7 +186,7 @@ async function updateOwnerSummary(client) {
         if (userData.xp >= xpNeeded) {
           userData.level++;
           userData.xp -= xpNeeded;
-          reply = `🚀 You leveled up to level ${userData.level}!`;
+          reply = `https://tenor.com/view/chosen-jesus-pointing-up-gif-20444572 \n# 🚀 You leveled up to level ${userData.level}!`;
         }
 
         userData.lastDailyClaim = todayStr;
@@ -217,7 +230,7 @@ async function updateOwnerSummary(client) {
           .setMinLength(20)
           .setRequired(true);
 
-        modal.addComponents(new ActionRowBuilder().addComponents(input));
+        modal.addTextInputComponents(input);
         return interaction.showModal(modal);
       }
     }
@@ -242,8 +255,9 @@ async function updateOwnerSummary(client) {
 
       const userData = levels[userId];
 
-      const embedDate = new Date(interaction.message.createdTimestamp);
-      const today = new Date();
+      const embedDate = adjustDate(new Date(interaction.message.createdTimestamp));
+      const today = nowAdjusted();
+
       const isSameDay =
         embedDate.getFullYear() === today.getFullYear() &&
         embedDate.getMonth() === today.getMonth() &&
@@ -275,8 +289,7 @@ async function updateOwnerSummary(client) {
       meta.lastActivityUser = userId;
       meta.lastActivityDate = new Date().toISOString();
 
-      fs.writeFileSync(metaFilePath, JSON.stringify(meta, null, 2));
-
+      fs.writeFileSync(metaFilePath, JSON.stringify(meta, null, 2));      
       fs.writeFileSync(levelsFilePath, JSON.stringify(levels, null, 2));
       await updateOwnerSummary(interaction.client);
 
