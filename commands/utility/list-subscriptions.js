@@ -1,9 +1,10 @@
 const { SlashCommandBuilder } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
+const config = require("../../config.json");
+const ownerID = config.ownerID; 
 
 const channelsFilePath = path.join(__dirname, '../../data/votd-channels.json');
-const OWNER_ID = '312920065093664780';
 
 module.exports = {
 	category: 'utility',
@@ -11,7 +12,7 @@ module.exports = {
 		.setName('list-subscriptions')
 		.setDescription('List all channels subscribed to VOTD (owner only).'),
 	async execute(interaction) {
-		if (interaction.user.id !== OWNER_ID) {
+		if (interaction.user.id !== ownerID) {
 			return await interaction.reply({ content: '❌ You are not authorized to use this command.', flags: 64 });
 		}
 

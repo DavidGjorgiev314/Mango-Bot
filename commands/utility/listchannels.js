@@ -1,4 +1,6 @@
 const { SlashCommandBuilder } = require('discord.js');
+const config = require("../../config.json");
+const ownerID = config.ownerID; 
 
 module.exports = {
     category: 'utility',
@@ -13,9 +15,8 @@ module.exports = {
         ),
     async execute(interaction) {
             const userId = interaction.user.id;
-            const authorizedUserId = '312920065093664780';
     
-            if (userId !== authorizedUserId) {
+            if (userId !== ownerID) {
                 return interaction.reply('You do not have permission to execute this command.');
             }
         const serverId = interaction.options.getString('server_id');

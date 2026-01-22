@@ -2,8 +2,8 @@ const { SlashCommandBuilder } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
 const { canExecuteCommand } = require('../../scripts/rate-limiter.js');
-
-const OWNER_ID = '312920065093664780';
+const config = require("../../config.json");
+const ownerID = config.ownerID;
 const channelsFilePath = path.join(__dirname, '../../data/votd-channels.json');
 
 module.exports = {
@@ -12,7 +12,7 @@ module.exports = {
 		.setName('subscribe')
 		.setDescription('Subscribe this channel to the Bible Verse of the Day feature!'),
 	async execute(interaction) {
-		if (!canExecuteCommand(interaction.user.id, 'subscribe', OWNER_ID)) {
+		if (!canExecuteCommand(interaction.user.id, 'subscribe', ownerID)) {
 			return await interaction.reply(':hourglass: You can only use this command once every hour.');
 		}
 

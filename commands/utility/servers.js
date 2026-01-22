@@ -1,5 +1,7 @@
 const { SlashCommandBuilder, Client, GatewayIntentBits } = require('discord.js');
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+const config = require("../../config.json");
+const ownerID = config.ownerID;
 
 module.exports = {
 	category: 'utility',
@@ -8,9 +10,8 @@ module.exports = {
 		.setDescription('Lists all servers the bot is in.'),
 	async execute(interaction) {
         const userId = interaction.user.id;
-		const authorizedUserId = '312920065093664780';
 
-		if (userId !== authorizedUserId) {
+		if (userId !== ownerID) {
 			return interaction.reply('You do not have permission to execute this command.');
 		}
 		const guilds = interaction.client.guilds.cache;
