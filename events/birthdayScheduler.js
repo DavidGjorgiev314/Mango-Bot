@@ -1,9 +1,10 @@
 const cron = require('node-cron');
 const birthdaysStore = require('./birthdaysStore');
+const { Events } = require('discord.js');
 
 module.exports = (client) => {
   // Only run after client is ready
-  client.once('ready', () => {
+  client.once(Events.ClientReady, () => {
     console.log('Birthday scheduler active!');
 
     // Helper to get ordinal suffix

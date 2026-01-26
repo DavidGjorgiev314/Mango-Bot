@@ -63,4 +63,4 @@ process.on('uncaughtException', (error) => {
 
 client.login(token);
 
-require('./events/birthdayScheduler');
+require('./events/birthdayScheduler')(client);
