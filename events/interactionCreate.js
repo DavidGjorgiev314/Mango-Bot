@@ -57,6 +57,13 @@ if (fs.existsSync(metaFilePath)) {
   meta = JSON.parse(fs.readFileSync(metaFilePath));
 }
 
+const localLevelsPath = path.join(__dirname, '../data/localLevels.json');
+
+let localLevels = {};
+if (fs.existsSync(localLevelsPath)) {
+  localLevels = JSON.parse(fs.readFileSync(localLevelsPath));
+}
+
 module.exports = {
   name: Events.InteractionCreate,
   async execute(interaction) {
@@ -200,6 +207,32 @@ module.exports = {
         await updateOwnerSummary(interaction.client);
 
         fs.writeFileSync(levelsFilePath, JSON.stringify(levels, null, 2));
+
+        const guildId = interaction.guild?.id;
+
+        if (guildId && localLevels[guildId]?.enabled) {
+
+          if (!localLevels[guildId].users[userId]) {
+            localLevels[guildId].users[userId] = {
+              xp: 0,
+              level: 1,
+              totalXp: 0
+            };
+          }
+
+          const localUser = localLevels[guildId].users[userId];
+
+          localUser.xp += xpGain;
+          localUser.totalXp += xpGain;
+
+          const xpNeededLocal = localUser.level * 100;
+          if (localUser.xp >= xpNeededLocal) {
+            localUser.level++;
+            localUser.xp -= xpNeededLocal;
+          }
+
+          fs.writeFileSync(localLevelsPath, JSON.stringify(localLevels, null, 2));
+        }
         return interaction.reply({ content: reply, flags: 64 });
       }
 
