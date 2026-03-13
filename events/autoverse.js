@@ -1,6 +1,24 @@
 const axios = require('axios');
 const cheerio = require('cheerio');
 const { EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder } = require('discord.js');
+const fs = require('fs');
+const path = require('path');
+
+const lastMessageFile = path.join(__dirname, '../data/last-votd-message.json');
+
+function loadLastMessages() {
+  try {
+    return JSON.parse(fs.readFileSync(lastMessageFile, 'utf8'));
+  } catch {
+    return {};
+  }
+}
+
+function saveLastVerseMessage(channelId, messageId) {
+  const data = loadLastMessages();
+  data[channelId] = messageId;
+  fs.writeFileSync(lastMessageFile, JSON.stringify(data, null, 2));
+}
 
 async function getVerseOfTheDay(counter) {
   try {
@@ -46,31 +64,39 @@ async function sendVerseOfTheDayToChannel(channel, counter) {
     }
 
     const read_button = new ButtonBuilder()
-     .setCustomId('daily_embed_xp')
-     .setLabel('Read')
-     .setEmoji('📖')
-     .setStyle(ButtonStyle.Success);
+      .setCustomId('daily_embed_xp')
+      .setLabel('Read')
+      .setEmoji('📖')
+      .setStyle(ButtonStyle.Success);
 
-     const translate_button = new ButtonBuilder()
-     .setCustomId('translate')
-     .setLabel(`Translate`)
-     .setEmoji('🇲🇰')
-     .setStyle(ButtonStyle.Secondary);
+    const translate_button = new ButtonBuilder()
+      .setCustomId('translate')
+      .setLabel(`Translate`)
+      .setEmoji('🇲🇰')
+      .setStyle(ButtonStyle.Secondary);
 
-     const reflect_button = new ButtonBuilder()
-     .setCustomId('reflect')
-     .setLabel(`Reflect`)
-     .setEmoji('✍️')
-     .setStyle(ButtonStyle.Primary);
+    const reflect_button = new ButtonBuilder()
+      .setCustomId('reflect')
+      .setLabel(`Reflect`)
+      .setEmoji('✍️')
+      .setStyle(ButtonStyle.Primary);
 
-     const row = new ActionRowBuilder().addComponents(
-     read_button,
-     reflect_button,
-     translate_button
-     );
+    const row = new ActionRowBuilder().addComponents(
+      read_button,
+      reflect_button,
+      translate_button
+    );
+
+    const message = await channel.send({
+      embeds: [embed],
+      components: [row],
+    });
+
+    saveLastVerseMessage(channel.id, message.id);
+
     console.log(`Verse of the Day embed #${counter} sent.`);
   } catch (error) {
-    console.error('Error sending embed:', error.message);
+    console.error('Error sending embed:', error);
   }
 }
 
