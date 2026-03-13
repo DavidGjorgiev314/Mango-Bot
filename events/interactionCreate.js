@@ -308,7 +308,10 @@ module.exports = {
       let xpAwarded = false;
 
       if (isSameDay && userData.lastReflection !== todayStr) {
+
         const xpGain = 20;
+
+        /* ===== GLOBAL XP ===== */
         userData.xp += xpGain;
         userData.totalXp += xpGain;
         userData.lastReflection = todayStr;
@@ -316,8 +319,35 @@ module.exports = {
 
         const xpNeeded = userData.level * 100;
         if (userData.xp >= xpNeeded) {
-          userData.level++;
-          userData.xp -= xpNeeded;
+            userData.level++;
+            userData.xp -= xpNeeded;
+        }
+
+        /* ===== LOCAL XP ===== */
+        const guildId = interaction.guild?.id;
+
+        if (guildId && localLevels[guildId]?.enabled) {
+
+            if (!localLevels[guildId].users[userId]) {
+                localLevels[guildId].users[userId] = {
+                    xp: 0,
+                    level: 1,
+                    totalXp: 0
+                };
+            }
+
+            const localUser = localLevels[guildId].users[userId];
+
+            localUser.xp += xpGain;
+            localUser.totalXp += xpGain;
+
+            const xpNeededLocal = localUser.level * 100;
+            if (localUser.xp >= xpNeededLocal) {
+                localUser.level++;
+                localUser.xp -= xpNeededLocal;
+            }
+
+            fs.writeFileSync(localLevelsPath, JSON.stringify(localLevels, null, 2));
         }
       }
       meta.lastActivityUser = userId;
