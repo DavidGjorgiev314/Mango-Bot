@@ -160,8 +160,7 @@ module.exports = {
 
         if (!isSameDay) {
           return interaction.reply({
-            content:
-              `⛔ This verse is from a previous day.\n🕒 Next bible verse in **${hours}h ${minutes}m**.`,
+            content: `⛔ This verse is from a previous day.\n🕒 Next bible verse in **${hours}h ${minutes}m**.`,
             flags: 64
           });
         }
@@ -170,11 +169,12 @@ module.exports = {
 
         if (userData.lastDailyClaim === todayStr) {
           return interaction.reply({
-            content:
-              `⛔ You already collected today's XP in **${userData.lastDailyClaimServer}**.`,
+            content: `⛔ You already collected today's XP in **${userData.lastDailyClaimServer}**.`,
             flags: 64
           });
         }
+
+        await interaction.deferReply({ flags: 64 });
 
         let xpGain = 50;
         let reply;
@@ -233,11 +233,13 @@ module.exports = {
 
           fs.writeFileSync(localLevelsPath, JSON.stringify(localLevels, null, 2));
         }
-        return interaction.reply({ content: reply, flags: 64 });
+
+        return interaction.editReply({ content: reply });
       }
 
       /* ---------- TRANSLATE ---------- */
       if (interaction.customId === 'translate') {
+        await interaction.deferReply({ flags: 64 });
         const url = 'https://www.bible.com/mk/verse-of-the-day';
         const response = await axios.get(url);
         const $ = cheerio.load(response.data);
@@ -245,7 +247,7 @@ module.exports = {
         const verseText = $('div[class*="border"] a').first().text().trim();
         const verseReference = $('div[class*="border"] p').first().text().trim();
 
-        return interaction.reply({
+        return interaction.editReply({
           content: `📖 **${verseReference}**\n${verseText}`,
           flags: 64
         });
