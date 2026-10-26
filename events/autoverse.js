@@ -29,10 +29,29 @@ async function getVerseOfTheDay(counter) {
     const verseText = $('div[class*="border"] a').first().text().trim();
     const verseReference = $('div[class*="border"] p').first().text().trim();
 
-    let imageUrl = $('img[src*="imageproxy.youversionapi.com"]').attr('src');
-    if (imageUrl && imageUrl.startsWith('/')) {
-      imageUrl = `https://www.bible.com${imageUrl}`;
-    }
+    const resolveImageUrl = (src) => {
+      if (!src) return null;
+
+      const nextImageMatch = src.match(/\/_next\/image\?url=([^&]+)/);
+      if (nextImageMatch) {
+        return decodeURIComponent(nextImageMatch[1]);
+      }
+
+      if (src.startsWith('/')) {
+        return `https://www.bible.com${src}`;
+      }
+
+      return src;
+    };
+
+    const imageUrl = resolveImageUrl(
+      $('a[href*="/verse-images/"] img').first().attr('src')
+    );
+
+    const appIconUrl =
+      resolveImageUrl(
+        $('img[src*="imageproxy.youversionapi.com"]').first().attr('src')
+      ) || 'https://www.bible.com/favicon.ico';
 
     const embed = new EmbedBuilder()
       .setTitle(`:cross: Bible Verse of the Day (#${counter}) :cross:`)
@@ -40,7 +59,7 @@ async function getVerseOfTheDay(counter) {
       .setColor('Random')
       .setFooter({
         text: 'Read your Bible! Verse fetched from Bible.com',
-        iconURL: 'https://www.bible.com/favicon.ico',
+        iconURL: appIconUrl,
       });
 
     if (imageUrl) {
