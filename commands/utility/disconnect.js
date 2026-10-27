@@ -63,22 +63,29 @@ module.exports = {
 
 		const timeout = setTimeout(async () => {
 			disconnectTimers.delete(member.id);
-			const refreshedMember = await interaction.guild.members.fetch(member.id);
 
-			if (refreshedMember.voice.channel) {
-				try {
-					await refreshedMember.voice.disconnect();
-					await interaction.followUp({
-						content: `${refreshedMember.user.username} has been disconnected.`,
-						flags: 64
-					});
-				} catch (err) {
-					console.error(err);
-					await interaction.followUp({
-						content: `I couldn't disconnect you — do I have permission?`,
-						flags: 64
-					});
-				}
+			let refreshedMember;
+			try {
+				refreshedMember = await interaction.guild.members.fetch(member.id);
+			} catch (err) {
+				console.error('Could not fetch member for scheduled disconnect:', err.message);
+				return;
+			}
+
+			if (!refreshedMember.voice.channel) return;
+
+			try {
+				await refreshedMember.voice.disconnect();
+				await interaction.followUp({
+					content: `${refreshedMember.user.username} has been disconnected.`,
+					flags: 64
+				});
+			} catch (err) {
+				console.error(err);
+				await interaction.followUp({
+					content: `I couldn't disconnect you — do I have permission?`,
+					flags: 64
+				}).catch(() => {});
 			}
 		}, totalMinutes * 60 * 1000);
 

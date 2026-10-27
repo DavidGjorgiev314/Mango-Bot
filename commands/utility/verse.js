@@ -1,6 +1,5 @@
-const { SlashCommandBuilder, Client, GatewayIntentBits } = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
 const axios = require('axios');
-const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
 module.exports = {
   category: 'utility',

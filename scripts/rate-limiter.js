@@ -16,4 +16,14 @@ function canExecuteCommand(userId, commandName, ownerId) {
 	return false;
 }
 
+// Drop expired entries periodically so the map does not grow for the whole
+// lifetime of the process. unref() keeps this from holding the process open.
+const cleanup = setInterval(() => {
+	const now = Date.now();
+	for (const [key, timestamp] of cooldowns) {
+		if (now - timestamp > ONE_HOUR) cooldowns.delete(key);
+	}
+}, ONE_HOUR);
+cleanup.unref();
+
 module.exports = { canExecuteCommand };

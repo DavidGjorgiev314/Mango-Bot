@@ -21,20 +21,30 @@ module.exports = {
 
   async execute(interaction) {
     if (interaction.user.id !== ownerID) {
-      return interaction.reply({ content: '❌ You are not allowed to use this command.', ephemeral: true });
+      return interaction.reply({ content: '❌ You are not allowed to use this command.', flags: 64 });
     }
 
     const member = interaction.options.getMember('user');
-    const displayName = member.nickname || member.user.username;
+    const user = interaction.options.getUser('user');
+    const displayName = member?.nickname || user?.username || 'that user';
     const dateStr = interaction.options.getString('date');
+    const hasChannel = Boolean(birthdaysStore.getBirthdayChannel(interaction.guild.id));
 
-    if (!birthdaysStore.getBirthdayChannel(interaction.guild.id)) {
-        await interaction.reply({
-            content: '✅ Birthday set! ⚠️ Note: no birthday channel is configured yet. Use /set-birthday-channel to set one so the bot can send messages.',
-            ephemeral: true
-        });
-        } 
-    birthdaysStore.setBirthday(interaction.guild.id, member.id, dateStr);
+    try {
+      birthdaysStore.setBirthday(interaction.guild.id, user.id, dateStr);
+    } catch (err) {
+      return interaction.reply({ content: `❌ ${err.message}`, flags: 64 });
+    }
+
+    if (!hasChannel) {
+      return interaction.reply({
+        content:
+          `✅ Birthday for **${displayName}** has been set to **${dateStr}** 🎂\n` +
+          '⚠️ Note: no birthday channel is configured yet. Use /set-birthday-channel so the bot can announce it.',
+        flags: 64,
+      });
+    }
+
     return interaction.reply(`✅ Birthday for **${displayName}** has been set to **${dateStr}** 🎂`);
   },
 };

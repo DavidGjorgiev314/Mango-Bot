@@ -17,15 +17,16 @@ module.exports = {
             const userId = interaction.user.id;
     
             if (userId !== ownerID) {
-                return interaction.reply('You do not have permission to execute this command.');
+                return interaction.reply({ content: 'You do not have permission to execute this command.', flags: 64 });
             }
         const serverId = interaction.options.getString('server_id');
         const guild = interaction.client.guilds.cache.get(serverId);
 
         if (!guild) {
-            await interaction.reply(`Could not find a server with ID: ${serverId}`);
-            return;
+            return interaction.reply({ content: `Could not find a server with ID: ${serverId}`, flags: 64 });
         }
+
+        await interaction.deferReply({ flags: 64 });
 
         try {
             // Fetch all channels in the server
@@ -57,10 +58,10 @@ module.exports = {
                 response += `- ${channel.name}\n${members || '    No members currently in this channel.'}\n`;
             }
 
-            await interaction.reply(response);
+            await interaction.editReply(response);
         } catch (error) {
             console.error(`Error fetching channels for server ID ${serverId}:`, error);
-            await interaction.reply('There was an error fetching the channel information.');
+            await interaction.editReply('There was an error fetching the channel information.');
         }
     },
 };

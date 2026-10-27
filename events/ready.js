@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const { Events, TextChannel, ActionRowBuilder, ButtonBuilder } = require('discord.js');
+const { Events, ActionRowBuilder, ButtonBuilder } = require('discord.js');
 const cron = require('node-cron');
 const { sendVerseOfTheDayToChannel } = require('./autoverse');
 const { deployCommandsToGuilds } = require('../deploy/deploy-guild-commands');
@@ -104,10 +104,6 @@ module.exports = {
     console.log(`Ready! Logged in as ${client.user.tag}`);
 
    cron.schedule('0 9 * * *', async () => {
-    let count = loadCounter();
-    count++;
-    saveCounter(count);
-
     let dynamicChannelIds = [];
     try {
       const rawData = fs.readFileSync(path.join(__dirname, '../data/votd-channels.json'), 'utf8');
@@ -118,19 +114,33 @@ module.exports = {
       return;
     }
 
+    const nextCount = loadCounter() + 1;
+    let delivered = 0;
+
     for (const channelId of dynamicChannelIds) {
       try {
         const channel = await client.channels.fetch(channelId);
 
-        if (channel instanceof TextChannel) {
-          await sendVerseOfTheDayToChannel(channel, count);
-          console.log(`Scheduled Bible verse sent to ${channelId}.`);
+        if (channel?.isTextBased?.()) {
+          const sent = await sendVerseOfTheDayToChannel(channel, nextCount);
+          if (sent) {
+            delivered++;
+            console.log(`Scheduled Bible verse sent to ${channelId}.`);
+          } else {
+            console.error(`Failed to build the verse embed for ${channelId}.`);
+          }
         } else {
           console.error(`Channel ${channelId} is invalid or not a text channel.`);
         }
       } catch (error) {
         console.error(`Error sending verse to ${channelId}:`, error);
       }
+    }
+
+    // Only advance the shared counter once the day's verse actually went out,
+    // so a total outage stays in sync with the double-XP logic.
+    if (delivered > 0) {
+      saveCounter(nextCount);
     }
   },
   { timezone: 'Europe/Skopje' });

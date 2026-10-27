@@ -29,6 +29,7 @@ module.exports = {
 
     const progress = readProgress();
     const userData = getUser(progress, userId);
+    const userWorks = userData.works ?? {};
 
     const displayName =
       interaction.guild
@@ -38,23 +39,23 @@ module.exports = {
     // Build an ordered list of all works in the progression.
     const allWorks = [];
     for (const item of progression) {
-      for (const work of item.works) {
+      for (const work of item.works ?? []) {
         allWorks.push({ item, work });
       }
     }
 
     const earnedBadges = allWorks.filter(({ work }) => hasBadge(userData, work.id));
     const badgeLines = earnedBadges.map(({ item, work }) => {
-      const stats = userData.works[work.id];
+      const stats = userWorks[work.id];
       const best = stats?.bestScore ?? 0;
       const attempts = stats?.attempts ?? 0;
-      return `🏅 **${item.name}** — ${work.title}\n   Best: **${best}/${work.questions.length}** · Attempts: **${attempts}**`;
+      return `🏅 **${item.name}** — ${work.title}\n   Best: **${best}/${(work.questions ?? []).length}** · Attempts: **${attempts}**`;
     });
 
     const workLines = allWorks
-      .filter(({ work }) => userData.works[work.id] && userData.works[work.id].attempts > 0)
+      .filter(({ work }) => userWorks[work.id] && userWorks[work.id].attempts > 0)
       .map(({ item, work }) => {
-        const stats = userData.works[work.id];
+        const stats = userWorks[work.id];
         const percent = work.questions.length > 0
           ? Math.round((stats.bestScore / work.questions.length) * 100)
           : 0;

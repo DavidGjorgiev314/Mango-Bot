@@ -13,15 +13,23 @@ module.exports = {
 
   async execute(interaction) {
     const dateStr = interaction.options.getString('date');
+    const hasChannel = Boolean(birthdaysStore.getBirthdayChannel(interaction.guild.id));
 
-    // Validate
-    if (!birthdaysStore.getBirthdayChannel(interaction.guild.id)) {
-        await interaction.reply({
-            content: '✅ Birthday set! ⚠️ Note: no birthday channel is configured yet. Use /set-birthday-channel to set one so the bot can send messages.',
-            ephemeral: true
-        });
-      }
-    birthdaysStore.setBirthday(interaction.guild.id, interaction.user.id, dateStr);
+    try {
+      birthdaysStore.setBirthday(interaction.guild.id, interaction.user.id, dateStr);
+    } catch (err) {
+      return interaction.reply({ content: `❌ ${err.message}`, flags: 64 });
+    }
+
+    if (!hasChannel) {
+      return interaction.reply({
+        content:
+          `✅ Your birthday has been set to **${dateStr}** 🎉\n` +
+          '⚠️ Note: no birthday channel is configured yet. Use /set-birthday-channel so the bot can announce it.',
+        flags: 64,
+      });
+    }
+
     return interaction.reply(`✅ Your birthday has been set to **${dateStr}** 🎉`);
   },
 };

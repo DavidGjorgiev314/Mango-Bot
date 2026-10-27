@@ -23,7 +23,7 @@ function saveLastVerseMessage(channelId, messageId) {
 async function getVerseOfTheDay(counter) {
   try {
     const url = 'https://www.bible.com/verse-of-the-day';
-    const response = await axios.get(url);
+    const response = await axios.get(url, { timeout: 15000 });
     const $ = cheerio.load(response.data);
 
     const verseText = $('div[class*="border"] a').first().text().trim();
@@ -79,7 +79,7 @@ async function sendVerseOfTheDayToChannel(channel, counter) {
 
     if (!embed) {
       console.error('Failed to fetch or build the verse embed.');
-      return;
+      return false;
     }
 
     const read_button = new ButtonBuilder()
@@ -114,8 +114,10 @@ async function sendVerseOfTheDayToChannel(channel, counter) {
     saveLastVerseMessage(channel.id, message.id);
 
     console.log(`Verse of the Day embed #${counter} sent.`);
+    return true;
   } catch (error) {
     console.error('Error sending embed:', error);
+    return false;
   }
 }
 

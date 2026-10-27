@@ -1,4 +1,3 @@
-const { exec } = require('child_process');
 const fs = require('node:fs');
 const path = require('node:path');
 const { Client, Collection, GatewayIntentBits, ActivityType } = require('discord.js');
@@ -50,6 +49,12 @@ const eventFiles = fs.readdirSync(eventsPath).filter(file => file.endsWith('.js'
 for (const file of eventFiles) {
     const filePath = path.join(eventsPath, file);
     const event = require(filePath);
+
+    if (!event.name || typeof event.execute !== 'function') {
+        // Helper/store modules live in events/ too but are not Discord events.
+        continue;
+    }
+
     if (event.once) {
         client.once(event.name, (...args) => event.execute(...args));
     } else {
@@ -57,8 +62,15 @@ for (const file of eventFiles) {
     }
 }
 
+process.on('unhandledRejection', (error) => {
+    console.error('Unhandled Promise Rejection:', error);
+});
+
 process.on('uncaughtException', (error) => {
     console.error('Uncaught Exception:', error);
+    // The process may be in an unknown state; exit so a supervisor (pm2/systemd)
+    // can restart it cleanly.
+    process.exit(1);
 });
 
 client.login(token);

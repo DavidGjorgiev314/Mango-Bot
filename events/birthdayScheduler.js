@@ -53,6 +53,7 @@ module.exports = (client) => {
       } catch (error) {
         console.error('Error sending birthday messages:', error);
       }
-    });
+    },
+    { timezone: 'Europe/Skopje' });
   });
 };

@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
 const axios = require("axios");
 
 module.exports = {
@@ -21,23 +21,27 @@ module.exports = {
                 { name: 'Christmas', value: 'Christmas' },
     )),
 	async execute(interaction) {
+    const category = interaction.options.getString('category');
+
+    await interaction.deferReply();
+
     try {
-      const { options } = interaction;
-      let category = options.getString('category');
-      const response = await axios.get(`https://v2.jokeapi.dev/joke/${category}?blacklistFlags=religious`);
+      const response = await axios.get(`https://v2.jokeapi.dev/joke/${category}?blacklistFlags=religious`, {
+        timeout: 15000,
+      });
       const jokeData = response.data;
-      console.log(jokeData);
-      if(jokeData.type == "single") {
-        await interaction.reply(jokeData.joke);
+
+      if (jokeData.type === 'single') {
+        await interaction.editReply(jokeData.joke);
       } else {
-        await interaction.reply(jokeData.setup);
-            setTimeout(() => {
-                interaction.editReply(`${jokeData.setup}\n${jokeData.delivery}`);
-            }, 3000);
+        await interaction.editReply(jokeData.setup);
+        setTimeout(() => {
+          interaction.editReply(`${jokeData.setup}\n${jokeData.delivery}`).catch(() => {});
+        }, 3000);
       }
-        } catch (error) {
-            console.error('Error fetching joke:', error);
-            await interaction.reply('Sorry, I coulndn\'t find a joke for you :(');
-        }
+    } catch (error) {
+      console.error('Error fetching joke:', error.message);
+      await interaction.editReply('Sorry, I couldn\'t find a joke for you :(');
+    }
 	},
 };

@@ -1,25 +1,36 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const axios = require("axios");
+const axios = require('axios');
+const config = require('../../config.json');
 
 module.exports = {
   category: 'utility',
-	data: new SlashCommandBuilder()
-    .setName("image")
-    .setDescription("Search for an image on the Internet!")
+  data: new SlashCommandBuilder()
+    .setName('image')
+    .setDescription('Search for an image on the Internet!')
     .addStringOption(option => {
       return option
-      .setName("keyword")
-      .setDescription("Enter the keyword for the image")
-      .setRequired(true)
+        .setName('keyword')
+        .setDescription('Enter the keyword for the image')
+        .setRequired(true);
     }),
-	async execute(interaction) {
-        const { options } = interaction;
-		const keyword = options.getString('keyword');
+  async execute(interaction) {
+    const keyword = interaction.options.getString('keyword');
+
+    await interaction.deferReply();
+
     try {
-      const response = await axios.get(`https://api.unsplash.com/photos/random?query=${keyword}&client_id=HMi17sm4raXFFJnfys_OKDyOFjvqezO7wvNyIjiZI7g`);
+      const response = await axios.get('https://api.unsplash.com/photos/random', {
+        params: {
+          query: keyword,
+          client_id: config.unsplashAccessKey,
+        },
+        timeout: 15000,
+      });
       const imageData = response.data;
-      let imageDescription = imageData.description;
-      let imageAltDesc = imageData.alt_description;
+
+      const imageDescription = imageData.description;
+      const imageAltDesc = imageData.alt_description;
+
       const inputTimestamp = new Date(imageData.created_at);
       const outputTimestamp = new Intl.DateTimeFormat('en-GB', {
         weekday: 'short',
@@ -28,28 +39,28 @@ module.exports = {
         day: '2-digit',
         hour: 'numeric',
         minute: 'numeric',
-        second: 'numeric'
+        second: 'numeric',
       }).format(inputTimestamp);
-      if(imageData.description === null) {
-        const imageEmbed = new EmbedBuilder()
-                .setTitle(`${imageAltDesc}`)
-                .setColor(`${imageData.color}`)
-                .setImage(imageData.urls.full)
-                .setFooter({ text: `by ${imageData.user.name} | ${outputTimestamp}`, iconURL: `${imageData.user.profile_image.large}` })
-            await interaction.reply({ embeds: [imageEmbed] });
-      } else {
-      console.log(imageData);
+
       const imageEmbed = new EmbedBuilder()
-                .setTitle(`${imageDescription}`)
-                .setDescription(`${imageAltDesc}`)
-                .setColor(`${imageData.color}`)
-                .setImage(imageData.urls.full)
-                .setFooter({ text: `by ${imageData.user.name} | ${outputTimestamp}`, iconURL: `${imageData.user.profile_image.large}` })
-            await interaction.reply({ embeds: [imageEmbed] });
+        .setColor(imageData.color || '#0099ff')
+        .setImage(imageData.urls.full)
+        .setFooter({
+          text: `by ${imageData.user.name} | ${outputTimestamp}`,
+          iconURL: imageData.user.profile_image.large,
+        });
+
+      if (imageDescription) {
+        imageEmbed.setTitle(imageDescription);
+        if (imageAltDesc) imageEmbed.setDescription(imageAltDesc);
+      } else if (imageAltDesc) {
+        imageEmbed.setTitle(imageAltDesc);
       }
-        } catch (error) {
-            console.error('Error fetching image:', error);
-            await interaction.reply(`Sorry, I couldn\'t find any images for ${keyword} :confused:`);
-        }
-	},
+
+      await interaction.editReply({ embeds: [imageEmbed] });
+    } catch (error) {
+      console.error('Error fetching image:', error.message);
+      await interaction.editReply(`Sorry, I couldn't find any images for \`${keyword}\` :confused:`);
+    }
+  },
 };

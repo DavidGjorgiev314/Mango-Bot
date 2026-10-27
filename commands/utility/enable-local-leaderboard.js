@@ -1,10 +1,13 @@
+const { SlashCommandBuilder } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
 const localLevelsPath = path.join(__dirname, '../../data/localLevels.json');
 
 module.exports = {
-  name: 'enable-local-leaderboard',
-  description: 'Enable local leaderboard for this server',
+  category: 'utility',
+  data: new SlashCommandBuilder()
+    .setName('enable-local-leaderboard')
+    .setDescription('Enable local leaderboard for this server'),
   async execute(interaction) {
 
     if (!interaction.member.permissions.has('Administrator')) {
